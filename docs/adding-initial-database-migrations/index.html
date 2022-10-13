@@ -1,0 +1,235 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Cloud Native Go Tutorials for Everyone!"><meta name=author content="Dumindu Madunuwan"><title>Adding initial database migrations · Learning Cloud Native Go</title><link rel=canonical href=https://learning-cloud-native-go.github.io/docs/adding-initial-database-migrations/><link rel=preload href=/scss/base.css as=style onload='this.rel="stylesheet"' integrity><link rel=preload href=/scss/mobile-fix.css as=style onload='this.rel="stylesheet"' integrity media="screen and (max-width: 1280px)"><link rel=preload href=/scss/theme/default.css as=style onload='this.rel="stylesheet"' integrity><link rel=preconnect href=https://-dsn.algolia.net crossorigin><link rel=stylesheet href=/scss/component/docsearch.css integrity><link rel=apple-touch-icon href=/img/favicons/apple-touch-icon.png sizes=180x180><link rel=icon href=/img/favicons/favicon-32x32.png sizes=32x32 type=image/png><link rel=icon href=/img/favicons/favicon-16x16.png sizes=16x16 type=image/png><link rel=manifest href=/img/favicons/manifest.json><link rel=mask-icon href=/img/favicons/safari-pinned-tab.svg color=#712cf9><link rel=icon href=/img/favicons/favicon.ico><meta name=theme-color content="#2b5797"><script async src="https://www.googletagmanager.com/gtag/js?id=G-H3GD0XFJ42"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-H3GD0XFJ42")</script></head><body><header id=site-header><div id=site-header-brand><a href=/>Learning Cloud Native Go</a></div><div id=site-header-controls><div class=dropdown><button class=dropdown-btn>
+<i class="icon icon-brightness"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><button class=color-scheme data-value=light><i class="icon icon-light-mode"></i> Light</button></li><li role=menuitem><button class=color-scheme data-value=dark><i class="icon icon-dark-mode"></i> Dark &nbsp;</button></li><li role=menuitem><button class=color-scheme data-value=night><i class="icon icon-night-mode"></i> Night</button></li></ul></div><div class=dropdown><button class=dropdown-btn>
+<i class="icon icon-translate"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><a href=#>English</a></li></ul></div></div><div id=site-header-menu><nav><ul><li><a href=/><i class='icon icon-home'></i>Home</a></li><li><a href=/docs/><i class='icon icon-book'></i>Documentation</a></li></ul></nav></div><div id=site-header-search></div></header><div id=site-main-content-wrapper><aside id=sidebar><a class=btn-close><i class="icon icon-close"></i></a><strong class=sidebar-section>Documentation</strong>
+<a class=sidebar-link href=/docs/overview/>Overview</a>
+<strong class=sidebar-section>Building RESTful APIs</strong>
+<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application/>Building a Dockerized RESTful API application</a>
+<a class=sidebar-link href=/docs/creating-a-new-go-project/>Creating a new Go project</a>
+<a class=sidebar-link href=/docs/adding-initial-http-server/>Adding initial HTTP server</a>
+<a class=sidebar-link href=/docs/adding-initial-docker-files/>Adding initial docker files</a>
+<a class=sidebar-link href=/docs/adding-initial-configurations/>Adding initial configurations</a>
+<a class=sidebar-link href=/docs/adding-chi-router/>Adding Chi router</a>
+<a class=sidebar-link href=/docs/adding-zerolog-logger/>Adding Zerolog logger</a>
+<a class=sidebar-link href=/docs/adding-db-docker-file/>Adding DB docker file</a>
+<a class="sidebar-link current" href=/docs/adding-initial-database-migrations/>Adding initial database migrations</a>
+<a class=sidebar-link href=/docs/adding-gorm/>Adding GORM</a>
+<a class=sidebar-link href=/docs/adding-initial-books-api-routes/>Adding initial books API routes</a>
+<a class=sidebar-link href=/docs/implementing-restful-handlers/>Implementing RESTful handlers</a>
+<a class=sidebar-link href=/docs/adding-validator-v9/>Adding Validator v9</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
+<button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Adding initial database migrations</h1></header><div id=article-content><blockquote><p>💭 Database migrations are like version controls for the database. There are few popular options for database migration in the Go ecosystem like <a href=https://github.com/golang-migrate/migrate><code>golang-migrate/migrate</code></a>, <a href=https://github.com/pressly/goose><code>pressly/goose</code></a>, <a href=http://gorm.io/docs/migration.html>GORM migrations</a> and etc. In here, we are using <a href=https://github.com/pressly/goose><code>pressly/goose</code></a>, due to its lesser resource usage and the simplicity of usage.</p></blockquote><h2 id=implementing-a-db-adapter>Implementing a DB adapter</h2><ul><li>In the previous section, inside the <code>docker-compose.yml</code> file, we adjusted the configurations of the MariaDB instance by setting environment variables to overwrite the default database name, username and passwords. From the Go application side, we need those configurations to connect with the database. So, let’s add those to <code>docker/app/.env</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-env data-lang=env><span class=line><span class=cl><span class=nv>DB_HOST</span><span class=o>=</span>db
+</span></span><span class=line><span class=cl><span class=nv>DB_PORT</span><span class=o>=</span><span class=m>3306</span>
+</span></span><span class=line><span class=cl><span class=nv>DB_USER</span><span class=o>=</span>myapp_user
+</span></span><span class=line><span class=cl><span class=nv>DB_PASS</span><span class=o>=</span>myapp_pass
+</span></span><span class=line><span class=cl><span class=nv>DB_NAME</span><span class=o>=</span>myapp_db
+</span></span></code></pre></div><ul><li>To read those from the Go application side, we need to add those to <code>Conf struct</code> in <code>config/config.go</code> file.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>Conf</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Debug</span>  <span class=kt>bool</span> <span class=s>`env:&#34;DEBUG,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Server</span> <span class=nx>serverConf</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Db</span>     <span class=nx>dbConf</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>dbConf</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Host</span>     <span class=kt>string</span> <span class=s>`env:&#34;DB_HOST,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Port</span>     <span class=kt>int</span>    <span class=s>`env:&#34;DB_PORT,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Username</span> <span class=kt>string</span> <span class=s>`env:&#34;DB_USER,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Password</span> <span class=kt>string</span> <span class=s>`env:&#34;DB_PASS,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>DbName</span>   <span class=kt>string</span> <span class=s>`env:&#34;DB_NAME,required&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li><p>Go standard library provides a generic interface around SQL databases via the <a href=https://golang.org/pkg/database/sql/><code>database/sql</code></a> package. But we have to use a specific <a href=https://github.com/golang/go/wiki/SQLDrivers>database driver implementation</a> according to the the database driver we use. In here we use <a href=https://github.com/go-sql-driver/mysql>go-sql-driver/mysql</a> as the MariaDB driver. So we need to run <code>go get github.com/go-sql-driver/mysql</code> to download and install the package. As you know, this updates <code>go.mod</code> and <code>go.sum</code> files as well.</p></li><li><p>Let’s create the database adapter in <code>adapter/db/db.go</code>.</p></li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>db</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;database/sql&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;fmt&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;github.com/go-sql-driver/mysql&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;myapp/config&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>New</span><span class=p>(</span><span class=nx>conf</span> <span class=o>*</span><span class=nx>config</span><span class=p>.</span><span class=nx>Conf</span><span class=p>)</span> <span class=p>(</span><span class=o>*</span><span class=nx>sql</span><span class=p>.</span><span class=nx>DB</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>cfg</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>mysql</span><span class=p>.</span><span class=nx>Config</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Net</span><span class=p>:</span>                  <span class=s>&#34;tcp&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Addr</span><span class=p>:</span>                 <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%v:%v&#34;</span><span class=p>,</span> <span class=nx>conf</span><span class=p>.</span><span class=nx>Db</span><span class=p>.</span><span class=nx>Host</span><span class=p>,</span> <span class=nx>conf</span><span class=p>.</span><span class=nx>Db</span><span class=p>.</span><span class=nx>Port</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>		<span class=nx>DBName</span><span class=p>:</span>               <span class=nx>conf</span><span class=p>.</span><span class=nx>Db</span><span class=p>.</span><span class=nx>DbName</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>User</span><span class=p>:</span>                 <span class=nx>conf</span><span class=p>.</span><span class=nx>Db</span><span class=p>.</span><span class=nx>Username</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Passwd</span><span class=p>:</span>               <span class=nx>conf</span><span class=p>.</span><span class=nx>Db</span><span class=p>.</span><span class=nx>Password</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>AllowNativePasswords</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>ParseTime</span><span class=p>:</span>            <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>sql</span><span class=p>.</span><span class=nf>Open</span><span class=p>(</span><span class=s>&#34;mysql&#34;</span><span class=p>,</span> <span class=nx>cfg</span><span class=p>.</span><span class=nf>FormatDSN</span><span class=p>())</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><h2 id=implementing-a-db-migration-tool-using-goose>Implementing a DB migration tool using Goose</h2><ul><li><p>We need to run <code>go get github.com/pressly/goose</code> to download and install the package.</p></li><li><p>Let’s create a custom <a href=https://github.com/pressly/goose><code>pressly/goose</code></a> binary. A good example can be found in <a href=https://github.com/pressly/goose/blob/master/cmd/goose/main.go><code>https://github.com/pressly/goose/blob/master/cmd/goose/main.go</code></a>. We save this under <code>cmd/migrate/main.go</code> with few modifications to remove few unnecessary codes, due to we are using only MariaDB in our application.</p></li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>main</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;flag&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;fmt&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;log&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;os&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;github.com/pressly/goose&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;myapp/adapter/db&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;myapp/config&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>const</span> <span class=nx>dialect</span> <span class=p>=</span> <span class=s>&#34;mysql&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span> <span class=p>=</span> <span class=nx>flag</span><span class=p>.</span><span class=nf>NewFlagSet</span><span class=p>(</span><span class=s>&#34;migrate&#34;</span><span class=p>,</span> <span class=nx>flag</span><span class=p>.</span><span class=nx>ExitOnError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>dir</span>   <span class=p>=</span> <span class=nx>flags</span><span class=p>.</span><span class=nf>String</span><span class=p>(</span><span class=s>&#34;dir&#34;</span><span class=p>,</span> <span class=s>&#34;/myapp/migrations&#34;</span><span class=p>,</span> <span class=s>&#34;directory with migration files&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nx>Usage</span> <span class=p>=</span> <span class=nx>usage</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nf>Parse</span><span class=p>(</span><span class=nx>os</span><span class=p>.</span><span class=nx>Args</span><span class=p>[</span><span class=mi>1</span><span class=p>:])</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>args</span> <span class=o>:=</span> <span class=nx>flags</span><span class=p>.</span><span class=nf>Args</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nb>len</span><span class=p>(</span><span class=nx>args</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span> <span class=o>||</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>==</span> <span class=s>&#34;-h&#34;</span> <span class=o>||</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>==</span> <span class=s>&#34;--help&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>flags</span><span class=p>.</span><span class=nf>Usage</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>command</span> <span class=o>:=</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>	<span class=k>switch</span> <span class=nx>command</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>case</span> <span class=s>&#34;create&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>Run</span><span class=p>(</span><span class=s>&#34;create&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>,</span> <span class=o>*</span><span class=nx>dir</span><span class=p>,</span> <span class=nx>args</span><span class=p>[</span><span class=mi>1</span><span class=p>:]</span><span class=o>...</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=s>&#34;migrate run: %v&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=k>case</span> <span class=s>&#34;fix&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>Run</span><span class=p>(</span><span class=s>&#34;fix&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>,</span> <span class=o>*</span><span class=nx>dir</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=s>&#34;migrate run: %v&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>appConf</span> <span class=o>:=</span> <span class=nx>config</span><span class=p>.</span><span class=nf>AppConfig</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>appDb</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>db</span><span class=p>.</span><span class=nf>New</span><span class=p>(</span><span class=nx>appConf</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>defer</span> <span class=nx>appDb</span><span class=p>.</span><span class=nf>Close</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>SetDialect</span><span class=p>(</span><span class=nx>dialect</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>Run</span><span class=p>(</span><span class=nx>command</span><span class=p>,</span> <span class=nx>appDb</span><span class=p>,</span> <span class=o>*</span><span class=nx>dir</span><span class=p>,</span> <span class=nx>args</span><span class=p>[</span><span class=mi>1</span><span class=p>:]</span><span class=o>...</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=s>&#34;migrate run: %v&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>usage</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>usagePrefix</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nf>PrintDefaults</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>usageCommands</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>usagePrefix</span> <span class=p>=</span> <span class=s>`Usage: migrate [OPTIONS] COMMAND
+</span></span></span><span class=line><span class=cl><span class=s>Examples:
+</span></span></span><span class=line><span class=cl><span class=s>    migrate status
+</span></span></span><span class=line><span class=cl><span class=s>Options:
+</span></span></span><span class=line><span class=cl><span class=s>`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>usageCommands</span> <span class=p>=</span> <span class=s>`
+</span></span></span><span class=line><span class=cl><span class=s>Commands:
+</span></span></span><span class=line><span class=cl><span class=s>    up                   Migrate the DB to the most recent version available
+</span></span></span><span class=line><span class=cl><span class=s>    up-by-one            Migrate the DB up by 1
+</span></span></span><span class=line><span class=cl><span class=s>    up-to VERSION        Migrate the DB to a specific VERSION
+</span></span></span><span class=line><span class=cl><span class=s>    down                 Roll back the version by 1
+</span></span></span><span class=line><span class=cl><span class=s>    down-to VERSION      Roll back to a specific VERSION
+</span></span></span><span class=line><span class=cl><span class=s>    redo                 Re-run the latest migration
+</span></span></span><span class=line><span class=cl><span class=s>    reset                Roll back all migrations
+</span></span></span><span class=line><span class=cl><span class=s>    status               Dump the migration status for the current DB
+</span></span></span><span class=line><span class=cl><span class=s>    version              Print the current version of the database
+</span></span></span><span class=line><span class=cl><span class=s>    create NAME [sql|go] Creates new migration file with the current timestamp
+</span></span></span><span class=line><span class=cl><span class=s>    fix                  Apply sequential ordering to migrations
+</span></span></span><span class=line><span class=cl><span class=s>`</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span></code></pre></div><blockquote><p>💡 If you are not familiar with <a href=https://github.com/pressly/goose><code>pressly/goose</code></a>, now it’s the time to read <a href=https://github.com/pressly/goose/blob/master/README.md>its README</a> for more details. Also in here, we are going to use only <code>.sql</code> migrations. So, I set the migrations directory to <code>/myapp/migrations</code>.</p></blockquote><ul><li>Due to we need to build this package and copy the binary file to the smaller alpine image with <code>.sql</code> migration files, we have to update <code>docker/app/Dockerfile</code>; (Line 1,2,11,12).</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-dockerfile data-lang=dockerfile><span class=line><span class=cl><span class=k>RUN</span> go build -ldflags <span class=s1>&#39;-w -s&#39;</span> -a -o ./bin/app ./cmd/app <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    <span class=o>&amp;&amp;</span> go build -ldflags <span class=s1>&#39;-w -s&#39;</span> -a -o ./bin/migrate ./cmd/migrate<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=c># Deployment environment</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=c># ----------------------</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>FROM</span><span class=s> alpine</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>RUN</span> apk update <span class=o>&amp;&amp;</span> apk add --no-cache bash<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/bin/app /myapp/<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/bin/migrate /myapp/<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/migrations /myapp/migrations<span class=err>
+</span></span></span></code></pre></div><ul><li>Rebuild and rerun the application. Login to <code>myapp_app_1</code> container by running <code>docker exec -it myapp_app_1 bash</code> and run <code>/myapp/migrate status</code>. You should see no migrations available.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>Applied At                  <span class=nv>Migration</span>
+</span></span><span class=line><span class=cl><span class=o>=====================================</span>
+</span></span></code></pre></div><h2 id=adding-initial-sql-migrations>Adding initial SQL migrations</h2><ul><li>As mentioned in the very beginning of this post, we are building a RESTful CRUD API for a bookshelf. So, let’s create our first <code>sql</code> migration file to create <code>books</code> table under <code>migrations/20190805170000_create_books_table.sql</code>.</li></ul><blockquote><p>💡 We can use <code>create</code> command of our goose binary; ex: <code>/myapp/migrate create create_books_table sql</code>.</p></blockquote><div class=highlight><pre tabindex=0 class=chroma><code class=language-sql data-lang=sql><span class=line><span class=cl><span class=c1>-- +goose Up
+</span></span></span><span class=line><span class=cl><span class=c1>-- SQL in this section is executed when the migration is applied.
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>CREATE</span><span class=w> </span><span class=k>TABLE</span><span class=w> </span><span class=k>IF</span><span class=w> </span><span class=k>NOT</span><span class=w> </span><span class=k>EXISTS</span><span class=w> </span><span class=n>books</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>(</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>id</span><span class=w>             </span><span class=nb>INT</span><span class=w> </span><span class=n>UNSIGNED</span><span class=w> </span><span class=k>NOT</span><span class=w> </span><span class=k>NULL</span><span class=w> </span><span class=n>AUTO_INCREMENT</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>title</span><span class=w>          </span><span class=nb>VARCHAR</span><span class=p>(</span><span class=mi>255</span><span class=p>)</span><span class=w> </span><span class=k>NOT</span><span class=w> </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>author</span><span class=w>         </span><span class=nb>VARCHAR</span><span class=p>(</span><span class=mi>255</span><span class=p>)</span><span class=w> </span><span class=k>NOT</span><span class=w> </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>published_date</span><span class=w> </span><span class=nb>DATE</span><span class=w>         </span><span class=k>NOT</span><span class=w> </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>image_url</span><span class=w>      </span><span class=nb>VARCHAR</span><span class=p>(</span><span class=mi>255</span><span class=p>)</span><span class=w> </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>description</span><span class=w>    </span><span class=nb>TEXT</span><span class=w>         </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>created_at</span><span class=w>     </span><span class=k>TIMESTAMP</span><span class=w>    </span><span class=k>NOT</span><span class=w> </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>updated_at</span><span class=w>     </span><span class=k>TIMESTAMP</span><span class=w>    </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>deleted_at</span><span class=w>     </span><span class=k>TIMESTAMP</span><span class=w>    </span><span class=k>NULL</span><span class=p>,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=k>PRIMARY</span><span class=w> </span><span class=k>KEY</span><span class=w> </span><span class=p>(</span><span class=n>id</span><span class=p>)</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=c1>-- +goose Down
+</span></span></span><span class=line><span class=cl><span class=c1>-- SQL in this section is executed when the migration is rolled back.
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>DROP</span><span class=w> </span><span class=k>TABLE</span><span class=w> </span><span class=k>IF</span><span class=w> </span><span class=k>EXISTS</span><span class=w> </span><span class=n>books</span><span class=p>;</span><span class=w>
+</span></span></span></code></pre></div><ul><li>Rebuild and rerun the application. Login to <code>myapp_app_1</code> container by running <code>docker exec -it myapp_app_1 bash</code> and run <code>/myapp/migrate status</code>. Now, you should see one pending migration is available.</li></ul><pre tabindex=0><code>Applied At        Migration
+==========================================================
+Pending           -- 20190805170000_create_books_table.sql
+</code></pre><blockquote><p>💡 We can run migrations manually with <code>/myapp/migrate up</code> command. But, let’s see how to automate running migrations in the development environment.</p></blockquote><h2 id=running-migrations-at-the-application-startup>Running migrations at the application startup</h2><blockquote><p>🔎 This step is quite tricky, due to we need to wait till <code>myapp_bd_1</code> container starts, to run database migrations. Otherwise, <code>myapp_app_1</code> will be stopped with an error, if migrations run before creating the database.</p></blockquote><p>💡 In here, I am going to install <code>mysql-client</code> package to the <code>myapp_app</code> docker image and wait till database is running, by checking the database connection via a <a href=https://dev.mysql.com/doc/refman/8.0/en/mysql.html>MySQL command-line client</a> call.</p><ul><li>Let’s save the script which checks the database connection, under <code>docker/app/bin/wait-for-mysql.sh</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=cp>#!/usr/bin/env bash
+</span></span></span><span class=line><span class=cl><span class=cp></span>
+</span></span><span class=line><span class=cl><span class=nv>host</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$1</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=nb>shift</span>
+</span></span><span class=line><span class=cl><span class=nv>cmd</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$@</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>until</span> mysql -h <span class=s2>&#34;</span><span class=nv>$host</span><span class=s2>&#34;</span> -u <span class=si>${</span><span class=nv>DB_USER</span><span class=si>}</span> -p<span class=si>${</span><span class=nv>DB_PASS</span><span class=si>}</span> <span class=si>${</span><span class=nv>DB_NAME</span><span class=si>}</span> -e <span class=s1>&#39;select 1&#39;</span><span class=p>;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>  &gt;<span class=p>&amp;</span><span class=m>2</span> <span class=nb>echo</span> <span class=s2>&#34;MySQL is unavailable - sleeping&#34;</span>
+</span></span><span class=line><span class=cl>  sleep <span class=m>1</span>
+</span></span><span class=line><span class=cl><span class=k>done</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>&gt;<span class=p>&amp;</span><span class=m>2</span> <span class=nb>echo</span> <span class=s2>&#34;Mysql is up - executing command&#34;</span>
+</span></span><span class=line><span class=cl><span class=nb>exec</span> <span class=nv>$cmd</span>
+</span></span></code></pre></div><ul><li>We need to update the <code>docker/app/Dockerfile</code> file, to install <code>mysql-client</code>, copy above script to the deployment environment and make them executable; (Line 4, 10,11).</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-dockerfile data-lang=dockerfile><span class=line><span class=cl><span class=c># Deployment environment</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=c># ----------------------</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>FROM</span><span class=s> alpine</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>RUN</span> apk update <span class=o>&amp;&amp;</span> apk add --no-cache bash mysql-client<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/bin/app /myapp/<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/bin/migrate /myapp/<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/migrations /myapp/migrations<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>build-env /myapp/docker/app/bin /usr/local/bin/myapp/<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>RUN</span> chmod +x /usr/local/bin/myapp/*<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>EXPOSE</span><span class=s> 8080</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span><span class=k>CMD</span> <span class=p>[</span><span class=s2>&#34;/myapp/app&#34;</span><span class=p>]</span><span class=err>
+</span></span></span></code></pre></div><ul><li>To run migrations at the applications startup and delete <code>mysql-client</code> after running migrations, let’s use this under <code>docker/app/bin/init.sh</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=cp>#!/usr/bin/env bash
+</span></span></span><span class=line><span class=cl><span class=cp></span><span class=nb>echo</span> <span class=s1>&#39;Runing migrations...&#39;</span>
+</span></span><span class=line><span class=cl>/myapp/migrate up &gt; /dev/null 2&gt;<span class=p>&amp;</span><span class=m>1</span> <span class=p>&amp;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;Deleting mysql-client...&#39;</span>
+</span></span><span class=line><span class=cl>apk del mysql-client
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> <span class=s1>&#39;Start application...&#39;</span>
+</span></span><span class=line><span class=cl>/myapp/app
+</span></span></code></pre></div><blockquote><p>💡 Due to we already copy files in <code>docker/app/bin</code> to deployment environment, no need to update <code>docker/app/Dockerfile</code>.</p></blockquote><ul><li>Let’s use above scripts inside <code>docker-compose.yml</code> to safely run migrations after database starts.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-yml data-lang=yml><span class=line><span class=cl><span class=nt>depends_on</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>db</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>command</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;/usr/local/bin/myapp/wait-for-mysql.sh&#34;</span><span class=p>,</span><span class=w> </span><span class=s2>&#34;db&#34;</span><span class=p>,</span><span class=w> </span><span class=s2>&#34;/usr/local/bin/myapp/init.sh&#34;</span><span class=p>]</span><span class=w>
+</span></span></span></code></pre></div><ul><li>Rebuild and rerun the application. You can see that database migrations are running while starting the application by reviewing the logs.</li></ul></div><footer id=article-footer><time id=article-last-updated datetime=0001-01-01><i class="icon icon-calendar"></i>&nbsp;Last updated: 0001-01-01</time>
+<a id=article-prev-link href=/docs/adding-db-docker-file/><i class="icon icon-prev"></i> Prev</a>
+<a id=article-next-link href=/docs/adding-gorm/>Next <i class="icon icon-next"></i></a></footer></article><aside id=toc><a class=btn-close><i class="icon icon-close"></i></a>
+<strong>On this page</strong><nav id=TableOfContents><ul><li><a href=#implementing-a-db-adapter>Implementing a DB adapter</a></li><li><a href=#implementing-a-db-migration-tool-using-goose>Implementing a DB migration tool using Goose</a></li><li><a href=#adding-initial-sql-migrations>Adding initial SQL migrations</a></li><li><a href=#running-migrations-at-the-application-startup>Running migrations at the application startup</a></li></ul></nav></aside></main></div><footer id=site-footer><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank><i class="icon icon-github icon-colored"></i> Sponsor</a>
+<a href=https://www.buymeacoffee.com/dumindu class=btn-buymeacoffee target=_blank></a></div><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-love>Made with <i class="icon icon-love icon-colored"></i> &nbsp;from&nbsp;<a href=https://docura.github.io/ target=_blank>Docura</a>&nbsp;&&nbsp;<a href=https://gohugo.io/ target=_blank>Hugo</a></div></footer><script type=text/javascript src=/js/base.min.js></script>
+<script src=/js/component/docsearch.min.js></script>
+<script type=application/javascript>docsearch({container:"#site-header-search",appId:"",indexName:"learning-cloud-native-go",apiKey:"9f66d24134e08e8c577683743bfb1918"})</script></body></html>

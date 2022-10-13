@@ -1,0 +1,291 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Cloud Native Go Tutorials for Everyone!"><meta name=author content="Dumindu Madunuwan"><title>Adding Validator v9 · Learning Cloud Native Go</title><link rel=canonical href=https://learning-cloud-native-go.github.io/docs/adding-validator-v9/><link rel=preload href=/scss/base.css as=style onload='this.rel="stylesheet"' integrity><link rel=preload href=/scss/mobile-fix.css as=style onload='this.rel="stylesheet"' integrity media="screen and (max-width: 1280px)"><link rel=preload href=/scss/theme/default.css as=style onload='this.rel="stylesheet"' integrity><link rel=preconnect href=https://-dsn.algolia.net crossorigin><link rel=stylesheet href=/scss/component/docsearch.css integrity><link rel=apple-touch-icon href=/img/favicons/apple-touch-icon.png sizes=180x180><link rel=icon href=/img/favicons/favicon-32x32.png sizes=32x32 type=image/png><link rel=icon href=/img/favicons/favicon-16x16.png sizes=16x16 type=image/png><link rel=manifest href=/img/favicons/manifest.json><link rel=mask-icon href=/img/favicons/safari-pinned-tab.svg color=#712cf9><link rel=icon href=/img/favicons/favicon.ico><meta name=theme-color content="#2b5797"><script async src="https://www.googletagmanager.com/gtag/js?id=G-H3GD0XFJ42"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-H3GD0XFJ42")</script></head><body><header id=site-header><div id=site-header-brand><a href=/>Learning Cloud Native Go</a></div><div id=site-header-controls><div class=dropdown><button class=dropdown-btn>
+<i class="icon icon-brightness"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><button class=color-scheme data-value=light><i class="icon icon-light-mode"></i> Light</button></li><li role=menuitem><button class=color-scheme data-value=dark><i class="icon icon-dark-mode"></i> Dark &nbsp;</button></li><li role=menuitem><button class=color-scheme data-value=night><i class="icon icon-night-mode"></i> Night</button></li></ul></div><div class=dropdown><button class=dropdown-btn>
+<i class="icon icon-translate"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><a href=#>English</a></li></ul></div></div><div id=site-header-menu><nav><ul><li><a href=/><i class='icon icon-home'></i>Home</a></li><li><a href=/docs/><i class='icon icon-book'></i>Documentation</a></li></ul></nav></div><div id=site-header-search></div></header><div id=site-main-content-wrapper><aside id=sidebar><a class=btn-close><i class="icon icon-close"></i></a><strong class=sidebar-section>Documentation</strong>
+<a class=sidebar-link href=/docs/overview/>Overview</a>
+<strong class=sidebar-section>Building RESTful APIs</strong>
+<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application/>Building a Dockerized RESTful API application</a>
+<a class=sidebar-link href=/docs/creating-a-new-go-project/>Creating a new Go project</a>
+<a class=sidebar-link href=/docs/adding-initial-http-server/>Adding initial HTTP server</a>
+<a class=sidebar-link href=/docs/adding-initial-docker-files/>Adding initial docker files</a>
+<a class=sidebar-link href=/docs/adding-initial-configurations/>Adding initial configurations</a>
+<a class=sidebar-link href=/docs/adding-chi-router/>Adding Chi router</a>
+<a class=sidebar-link href=/docs/adding-zerolog-logger/>Adding Zerolog logger</a>
+<a class=sidebar-link href=/docs/adding-db-docker-file/>Adding DB docker file</a>
+<a class=sidebar-link href=/docs/adding-initial-database-migrations/>Adding initial database migrations</a>
+<a class=sidebar-link href=/docs/adding-gorm/>Adding GORM</a>
+<a class=sidebar-link href=/docs/adding-initial-books-api-routes/>Adding initial books API routes</a>
+<a class=sidebar-link href=/docs/implementing-restful-handlers/>Implementing RESTful handlers</a>
+<a class="sidebar-link current" href=/docs/adding-validator-v9/>Adding Validator v9</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
+<button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Adding Validator v9</h1></header><div id=article-content><blockquote><p>💭 Form validation is an important step while inserting and updating data. In the Go ecosystem we can see few validation packages like <a href=https://gopkg.in/go-playground/validator.v9><code>go-playground/validator.v9</code></a>, <a href=https://github.com/go-ozzo/ozzo-validation><code>go-ozzo/ozzo-validation</code></a>. In here, we are using <a href=https://gopkg.in/go-playground/validator.v9><code>playground/validator.v9</code></a> due to its simplicity of usage.</p></blockquote><h2 id=adding-initial-validator>Adding initial validator</h2><ul><li><p>We need to run <code>go get gopkg.in/go-playground/validator.v9</code> to download and install the package. As you know, this updates <code>go.mod</code> and <code>go.sum</code> files as well.</p></li><li><p>Let&rsquo;s create <code>util/validator/validator.go</code> to get the <code>*validator.Validate</code> with a custom configuration. By default, it uses <code>validate</code> struct field tags to read meta data. But, in here, we replace it with <code>form</code> struct field tags.</p></li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>validator</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;gopkg.in/go-playground/validator.v9&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>New</span><span class=p>()</span> <span class=o>*</span><span class=nx>validator</span><span class=p>.</span><span class=nx>Validate</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validate</span> <span class=o>:=</span> <span class=nx>validator</span><span class=p>.</span><span class=nf>New</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validate</span><span class=p>.</span><span class=nf>SetTagName</span><span class=p>(</span><span class=s>&#34;form&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>validate</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li>To use this <code>*validator.Validate</code> as the global validator, let’s add this to <code>App struct</code> in <code>app/app/app.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>import</span> <span class=s>&#34;gopkg.in/go-playground/validator.v9&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>App</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>logger</span>    <span class=o>*</span><span class=nx>logger</span><span class=p>.</span><span class=nx>Logger</span>
+</span></span><span class=line><span class=cl>	<span class=nx>db</span>        <span class=o>*</span><span class=nx>gorm</span><span class=p>.</span><span class=nx>DB</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validator</span> <span class=o>*</span><span class=nx>validator</span><span class=p>.</span><span class=nx>Validate</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>New</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>logger</span> <span class=o>*</span><span class=nx>logger</span><span class=p>.</span><span class=nx>Logger</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=nx>db</span> <span class=o>*</span><span class=nx>gorm</span><span class=p>.</span><span class=nx>DB</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validator</span> <span class=o>*</span><span class=nx>validator</span><span class=p>.</span><span class=nx>Validate</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=o>*</span><span class=nx>App</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>App</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>logger</span><span class=p>:</span>    <span class=nx>logger</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>db</span><span class=p>:</span>        <span class=nx>db</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>validator</span><span class=p>:</span> <span class=nx>validator</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Then, we need to update <code>cmd/app/main.go</code> to get this <code>*validator.Validate</code> at the startup of the application.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>import</span> <span class=nx>vr</span> <span class=s>&#34;myapp/util/validator&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>	<span class=nx>validator</span> <span class=o>:=</span> <span class=nx>vr</span><span class=p>.</span><span class=nf>New</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>application</span> <span class=o>:=</span> <span class=nx>app</span><span class=p>.</span><span class=nf>New</span><span class=p>(</span><span class=nx>logger</span><span class=p>,</span> <span class=nx>db</span><span class=p>,</span> <span class=nx>validator</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Let’s add validation rules to the <code>BookForm struct</code> in the <code>model/book.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>BookForm</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Title</span>         <span class=kt>string</span> <span class=s>`json:&#34;title&#34; form:&#34;required,max=255&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Author</span>        <span class=kt>string</span> <span class=s>`json:&#34;author&#34; form:&#34;required,max=255&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>PublishedDate</span> <span class=kt>string</span> <span class=s>`json:&#34;published_date&#34; form:&#34;required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ImageUrl</span>      <span class=kt>string</span> <span class=s>`json:&#34;image_url&#34; form:&#34;url&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Description</span>   <span class=kt>string</span> <span class=s>`json:&#34;description&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><blockquote><p>💡 You can see all list of validation rule types, supported by <code>playground/validator.v9</code> in <a href=https://github.com/go-playground/validator/blob/v9/baked_in.go#L64>https://github.com/go-playground/validator/blob/v9/baked_in.go#L64</a>.</p></blockquote><ul><li>Then, let&rsquo;s add validations to the <code>HandleCreateBook()</code> and <code>HandleUpdateBook()</code> methods in the <code>app/app/book_handler.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>app</span> <span class=o>*</span><span class=nx>App</span><span class=p>)</span> <span class=nf>HandleCreateBook</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=c1>// after create form from decoding request Body
+</span></span></span><span class=line><span class=cl><span class=c1></span>  
+</span></span><span class=line><span class=cl>  <span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>app</span><span class=p>.</span><span class=nx>validator</span><span class=p>.</span><span class=nf>Struct</span><span class=p>(</span><span class=nx>form</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusUnprocessableEntity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>  
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>	
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>app</span> <span class=o>*</span><span class=nx>App</span><span class=p>)</span> <span class=nf>HandleUpdateBook</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	
+</span></span><span class=line><span class=cl>  <span class=c1>// after create form from decoding request Body
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>  <span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>app</span><span class=p>.</span><span class=nx>validator</span><span class=p>.</span><span class=nf>Struct</span><span class=p>(</span><span class=nx>form</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusUnprocessableEntity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>	
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>	
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Rebuild and rerun the application. You should see error messages like following messages, while inserting invalid data.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;error&#34;</span><span class=o>:</span> <span class=s2>&#34;Key: &#39;BookForm.Title&#39; Error:Field validation for &#39;Title&#39; failed on the &#39;required&#39; tag&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><blockquote><p>💭 As you can see, those are not having valid <a href=https://en.wikipedia.org/wiki/JSON>JSON</a> formats. And also messages are not suitable to show to the end user. So, we will add custom messages for these in the next section.</p></blockquote><h2 id=implementing-custom-validation-messages>Implementing custom validation messages</h2><p>We need to fix two things in the default error messages of <a href=https://gopkg.in/go-playground/validator.v9><code>playground/validator.v9</code></a>.</p><ol><li>It shows struct field names, instead of names in <code>json</code> tags; (<code>"Field validation for 'Title' failed"</code> instead <code>"Field validation for 'title' failed"</code>).</li></ol><blockquote><p>🔎 We can see the solution in <a href=https://github.com/go-playground/validator/blob/173026262523a492668bd6d78b8934c2ad69843f/validator_instance.go#L122>https://github.com/go-playground/validator/blob/173026262523a492668bd6d78b8934c2ad69843f/validator_instance.go#L122</a> .</p></blockquote><ol start=2><li>The error response is not having a valid <a href="https://medium.com/r/?url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FJSON">JSON</a> format and error messages are not suitable to show to the end users.</li></ol><blockquote><p>🔎 The solution <a href=https://gopkg.in/go-playground/validator.v9><code>playground/validator.v9</code></a> developers suggest is to use its <a href=https://github.com/go-playground/validator/tree/v9/translations><code>go-playground/validator/translations</code></a> package. But due to we don&rsquo;t need to support multiple translations in our API application, we will write <code>ToErrResponse()</code> function in <code>util/validator/validator.go</code> to convert the default error messages to a valid <a href=https://en.wikipedia.org/wiki/JSON>JSON</a> format with end user friendly error messages. However better check their implementation in <a href=https://github.com/go-playground/validator/blob/v9/translations/en/en.go>https://github.com/go-playground/validator/blob/v9/translations/en/en.go</a>.</p></blockquote><ul><li>Let’s update <code>util/validator/validator.go</code> to fix both above issues.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>validator</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;fmt&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;reflect&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;strings&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;gopkg.in/go-playground/validator.v9&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ErrResponse</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Errors</span> <span class=p>[]</span><span class=kt>string</span> <span class=s>`json:&#34;errors&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>New</span><span class=p>()</span> <span class=o>*</span><span class=nx>validator</span><span class=p>.</span><span class=nx>Validate</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validate</span> <span class=o>:=</span> <span class=nx>validator</span><span class=p>.</span><span class=nf>New</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>validate</span><span class=p>.</span><span class=nf>SetTagName</span><span class=p>(</span><span class=s>&#34;form&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Using the names which have been specified for JSON representations of structs, rather than normal Go field names
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=nx>validate</span><span class=p>.</span><span class=nf>RegisterTagNameFunc</span><span class=p>(</span><span class=kd>func</span><span class=p>(</span><span class=nx>fld</span> <span class=nx>reflect</span><span class=p>.</span><span class=nx>StructField</span><span class=p>)</span> <span class=kt>string</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>name</span> <span class=o>:=</span> <span class=nx>strings</span><span class=p>.</span><span class=nf>SplitN</span><span class=p>(</span><span class=nx>fld</span><span class=p>.</span><span class=nx>Tag</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;json&#34;</span><span class=p>),</span> <span class=s>&#34;,&#34;</span><span class=p>,</span> <span class=mi>2</span><span class=p>)[</span><span class=mi>0</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>name</span> <span class=o>==</span> <span class=s>&#34;-&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=s>&#34;&#34;</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=nx>name</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>validate</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>ToErrResponse</span><span class=p>(</span><span class=nx>err</span> <span class=kt>error</span><span class=p>)</span> <span class=o>*</span><span class=nx>ErrResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>fieldErrors</span><span class=p>,</span> <span class=nx>ok</span> <span class=o>:=</span> <span class=nx>err</span><span class=p>.(</span><span class=nx>validator</span><span class=p>.</span><span class=nx>ValidationErrors</span><span class=p>);</span> <span class=nx>ok</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>resp</span> <span class=o>:=</span> <span class=nx>ErrResponse</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>Errors</span><span class=p>:</span> <span class=nb>make</span><span class=p>([]</span><span class=kt>string</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=nx>fieldErrors</span><span class=p>)),</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>for</span> <span class=nx>i</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>fieldErrors</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>switch</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Tag</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>case</span> <span class=s>&#34;required&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>				<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%s is a required field&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>			<span class=k>case</span> <span class=s>&#34;max&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>				<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%s must be a maximum of %s in length&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>(),</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Param</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>			<span class=k>case</span> <span class=s>&#34;url&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>				<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%s must be a valid URL&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>			<span class=k>default</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>				<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;something wrong on %s; %s&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>(),</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Tag</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=o>&amp;</span><span class=nx>resp</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Then let’s update <code>app/app/book_handler.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>import</span> <span class=s>&#34;myapp/util/validator&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>app</span> <span class=o>*</span><span class=nx>App</span><span class=p>)</span> <span class=nf>HandleCreateBook</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  	<span class=c1>// after create form from decoding request Body
+</span></span></span><span class=line><span class=cl><span class=c1></span>  
+</span></span><span class=line><span class=cl>  	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>app</span><span class=p>.</span><span class=nx>validator</span><span class=p>.</span><span class=nf>Struct</span><span class=p>(</span><span class=nx>form</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>resp</span> <span class=o>:=</span> <span class=nx>validator</span><span class=p>.</span><span class=nf>ToErrResponse</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>resp</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>appErrFormErrResponseFailure</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>respBody</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>resp</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>			<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>appErrJsonCreationFailure</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusUnprocessableEntity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=nx>w</span><span class=p>.</span><span class=nf>Write</span><span class=p>(</span><span class=nx>respBody</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>  
+</span></span><span class=line><span class=cl>  	<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>app</span> <span class=o>*</span><span class=nx>App</span><span class=p>)</span> <span class=nf>HandleUpdateBook</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	
+</span></span><span class=line><span class=cl>	<span class=c1>// after create form from decoding request Body
+</span></span></span><span class=line><span class=cl><span class=c1></span>	
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>app</span><span class=p>.</span><span class=nx>validator</span><span class=p>.</span><span class=nf>Struct</span><span class=p>(</span><span class=nx>form</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>resp</span> <span class=o>:=</span> <span class=nx>validator</span><span class=p>.</span><span class=nf>ToErrResponse</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>resp</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>appErrFormErrResponseFailure</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>respBody</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>resp</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>app</span><span class=p>.</span><span class=nx>logger</span><span class=p>.</span><span class=nf>Warn</span><span class=p>().</span><span class=nf>Err</span><span class=p>(</span><span class=nx>err</span><span class=p>).</span><span class=nf>Msg</span><span class=p>(</span><span class=s>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>			<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>`{&#34;error&#34;: &#34;%v&#34;}`</span><span class=p>,</span> <span class=nx>appErrJsonCreationFailure</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=nx>w</span><span class=p>.</span><span class=nf>WriteHeader</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusUnprocessableEntity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=nx>w</span><span class=p>.</span><span class=nf>Write</span><span class=p>(</span><span class=nx>respBody</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	
+</span></span><span class=line><span class=cl>	<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><blockquote><p>⭐ As you can see, we duplicate 20 lines of code in each handler and it is not a good practice. 👨‍🏫 Assume this as <strong>the homework</strong> and find how we can remove these duplicates. 🔎 One way is, moving these codes to a private method in <code>app/app/common.go</code>.</p></blockquote><ul><li>We save those static error messages in <code>app/app/app.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>const</span> <span class=nx>appErrFormErrResponseFailure</span> <span class=p>=</span> <span class=s>&#34;form error response failure&#34;</span>
+</span></span></code></pre></div><ul><li>Rebuild and rerun the application. Now, you should see error messages like these.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;errors&#34;</span><span class=o>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;title is a required field&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;author must be a maximum of 255 in length&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;image_url must be a valid URL&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><h2 id=implementing-custom-validation-types>Implementing custom validation types</h2><ul><li>One last thing! We don’t fully validate the author&rsquo;s name and the published date of the <code>BookForm struct</code>. For the moment <a href=https://gopkg.in/go-playground/validator.v9><code>playground/validator.v9</code></a> is not supporting <em>“alphabetic characters with space”</em> and <em>“date”</em> validations. So, let’s create a custom validation types for these in <code>util/validator/validator.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>import</span> <span class=s>&#34;regexp&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>const</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>alphaSpaceRegexString</span> <span class=kt>string</span> <span class=p>=</span> <span class=s>&#34;^[a-zA-Z ]+$&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>dateRegexString</span>       <span class=kt>string</span> <span class=p>=</span> <span class=s>&#34;^(((19|20)([2468][048]|[13579][26]|0[48])|2000)[/-]02[/-]29|((19|20)[0-9]{2}[/-](0[469]|11)[/-](0[1-9]|[12][0-9]|30)|(19|20)[0-9]{2}[/-](0[13578]|1[02])[/-](0[1-9]|[12][0-9]|3[01])|(19|20)[0-9]{2}[/-]02[/-](0[1-9]|1[0-9]|2[0-8])))$&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>New</span><span class=p>()</span> <span class=o>*</span><span class=nx>validator</span><span class=p>.</span><span class=nx>Validate</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>  
+</span></span><span class=line><span class=cl>  <span class=nx>validate</span><span class=p>.</span><span class=nf>RegisterValidation</span><span class=p>(</span><span class=s>&#34;alpha_space&#34;</span><span class=p>,</span> <span class=nx>isAlphaSpace</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=nx>validate</span><span class=p>.</span><span class=nf>RegisterValidation</span><span class=p>(</span><span class=s>&#34;date&#34;</span><span class=p>,</span> <span class=nx>isDate</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=nx>validate</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>isAlphaSpace</span><span class=p>(</span><span class=nx>fl</span> <span class=nx>validator</span><span class=p>.</span><span class=nx>FieldLevel</span><span class=p>)</span> <span class=kt>bool</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>reg</span> <span class=o>:=</span> <span class=nx>regexp</span><span class=p>.</span><span class=nf>MustCompile</span><span class=p>(</span><span class=nx>alphaSpaceRegexString</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>reg</span><span class=p>.</span><span class=nf>MatchString</span><span class=p>(</span><span class=nx>fl</span><span class=p>.</span><span class=nf>Field</span><span class=p>().</span><span class=nf>String</span><span class=p>())</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>isDate</span><span class=p>(</span><span class=nx>fl</span> <span class=nx>validator</span><span class=p>.</span><span class=nx>FieldLevel</span><span class=p>)</span> <span class=kt>bool</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>reg</span> <span class=o>:=</span> <span class=nx>regexp</span><span class=p>.</span><span class=nf>MustCompile</span><span class=p>(</span><span class=nx>dateRegexString</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>reg</span><span class=p>.</span><span class=nf>MatchString</span><span class=p>(</span><span class=nx>fl</span><span class=p>.</span><span class=nf>Field</span><span class=p>().</span><span class=nf>String</span><span class=p>())</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>ToErrResponse</span><span class=p>(</span><span class=nx>err</span> <span class=kt>error</span><span class=p>)</span> <span class=o>*</span><span class=nx>ErrResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>	<span class=k>for</span> <span class=nx>i</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>fieldErrors</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>switch</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Tag</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>		<span class=k>case</span> <span class=s>&#34;alpha_space&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>			<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%s can only contain alphabetic and space characters&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>		<span class=k>case</span> <span class=s>&#34;date&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>			<span class=nx>resp</span><span class=p>.</span><span class=nx>Errors</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%s must be a valid date&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Field</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>  <span class=c1>//... 
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Then, we need to update <code>BookForm struct</code> in <code>model/book.go</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>BookForm</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=nx>Author</span>        <span class=kt>string</span> <span class=s>`json:&#34;author&#34; form:&#34;required,alpha_space,max=255&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>PublishedDate</span> <span class=kt>string</span> <span class=s>`json:&#34;published_date&#34; form:&#34;required,date&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><ul><li>Rebuild and rerun the application. Now, you should get validation errors even for <code>author</code> and <code>image_url</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=s2>&#34;errors&#34;</span><span class=o>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;title is a required field&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;author can only contain alphabetic and space characters&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;published_date must be a valid date&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;image_url must be a valid URL&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=p>]</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div></div><footer id=article-footer><time id=article-last-updated datetime=0001-01-01><i class="icon icon-calendar"></i>&nbsp;Last updated: 0001-01-01</time>
+<a id=article-prev-link href=/docs/implementing-restful-handlers/><i class="icon icon-prev"></i> Prev</a></footer></article><aside id=toc><a class=btn-close><i class="icon icon-close"></i></a>
+<strong>On this page</strong><nav id=TableOfContents><ul><li><a href=#adding-initial-validator>Adding initial validator</a></li><li><a href=#implementing-custom-validation-messages>Implementing custom validation messages</a></li><li><a href=#implementing-custom-validation-types>Implementing custom validation types</a></li></ul></nav></aside></main></div><footer id=site-footer><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank><i class="icon icon-github icon-colored"></i> Sponsor</a>
+<a href=https://www.buymeacoffee.com/dumindu class=btn-buymeacoffee target=_blank></a></div><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-love>Made with <i class="icon icon-love icon-colored"></i> &nbsp;from&nbsp;<a href=https://docura.github.io/ target=_blank>Docura</a>&nbsp;&&nbsp;<a href=https://gohugo.io/ target=_blank>Hugo</a></div></footer><script type=text/javascript src=/js/base.min.js></script>
+<script src=/js/component/docsearch.min.js></script>
+<script type=application/javascript>docsearch({container:"#site-header-search",appId:"",indexName:"learning-cloud-native-go",apiKey:"9f66d24134e08e8c577683743bfb1918"})</script></body></html>
