@@ -1,0 +1,178 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Cloud Native Go Tutorials for Everyone!"><meta name=author content="Dumindu Madunuwan"><title>Database and migrations · Learning Cloud Native Go</title><link rel=canonical href=https://learning-cloud-native-go.github.io/docs/database-and-migrations/><link rel=stylesheet href=/scss/base.css integrity><link rel=stylesheet href=/scss/theme/default.css integrity><link rel=preconnect href=https://5ND7WIN6JB-dsn.algolia.net crossorigin><link rel=stylesheet href=/scss/component/docsearch.css integrity><link rel=manifest href=/manifest.json><link rel=icon href=/img/icon/favicon.ico><link rel=icon href=/img/icon/icon-16.png sizes=16x16 type=image/png><link rel=icon href=/img/icon/icon-32.png sizes=32x32 type=image/png><link rel=apple-touch-icon href=/img/icon/icon-180.png sizes=180x180><script async src="https://www.googletagmanager.com/gtag/js?id=G-H3GD0XFJ42"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-H3GD0XFJ42")</script></head><body><header id=site-header><div id=site-header-brand><a href=/>Learning Cloud Native Go</a></div><div id=site-header-controls><div class=dropdown><button class=dropdown-btn aria-haspopup=menu aria-label="theme selector">
+<i class="icon icon-brightness"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><button class=color-scheme data-value=light><i class="icon icon-light-mode"></i> Light</button></li><li role=menuitem><button class=color-scheme data-value=dark><i class="icon icon-dark-mode"></i> Dark &nbsp;</button></li><li role=menuitem><button class=color-scheme data-value=night><i class="icon icon-night-mode"></i> Night</button></li></ul></div><div class=dropdown><button class=dropdown-btn aria-haspopup=menu aria-label="language selector">
+<i class="icon icon-translate"></i>
+<i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><a href=#>English</a></li></ul></div></div><div id=site-header-menu><nav><ul><li><a href=/><i class='icon icon-home'></i>Home</a></li><li><a href=/docs/><i class='icon icon-book'></i>Documentation</a></li></ul></nav></div><div id=site-header-search></div></header><div id=site-main-content-wrapper><aside id=sidebar><span class=btn-close><i class="icon icon-close"></i></span><strong class=sidebar-section>Documentation</strong>
+<a class=sidebar-link href=/docs/overview/>Overview</a>
+<strong class=sidebar-section>Building an API application (Draft)</strong>
+<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application-in-go/>Building a Dockerized RESTful API application in Go</a>
+<a class=sidebar-link href=/docs/hello-world-server/>Hello World server</a>
+<strong class=sidebar-section>Building an API application (V1)</strong>
+<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application/>Building a Dockerized RESTful API application</a>
+<a class=sidebar-link href=/docs/creating-a-new-go-project/>Creating a new Go project</a>
+<a class=sidebar-link href=/docs/adding-initial-http-server/>Adding initial HTTP server</a>
+<a class=sidebar-link href=/docs/adding-initial-docker-files/>Adding initial docker files</a>
+<a class=sidebar-link href=/docs/adding-initial-configurations/>Adding initial configurations</a>
+<a class=sidebar-link href=/docs/adding-chi-router/>Adding Chi router</a>
+<a class=sidebar-link href=/docs/adding-zerolog-logger/>Adding Zerolog logger</a>
+<a class=sidebar-link href=/docs/adding-db-docker-file/>Adding DB docker file</a>
+<a class=sidebar-link href=/docs/adding-initial-database-migrations/>Adding initial database migrations</a>
+<a class=sidebar-link href=/docs/adding-gorm/>Adding GORM</a>
+<a class=sidebar-link href=/docs/adding-initial-books-api-routes/>Adding initial books API routes</a>
+<a class=sidebar-link href=/docs/implementing-restful-handlers/>Implementing RESTful handlers</a>
+<a class=sidebar-link href=/docs/adding-validator-v9/>Adding Validator v9</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
+<button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Database and migrations</h1></header><div id=article-content><blockquote><p><strong>👨‍🏫 Before we start&mldr;</strong></p><ul><li>We&rsquo;ll run a MariaDB/ MySQL database via the <code>docker-compose</code>.</li><li>There are few popular database migration tools in the Go ecosystem like <a href=https://github.com/golang-migrate/migrate><code>golang-migrate/migrate</code></a>, <a href=https://github.com/pressly/goose><code>pressly/goose</code></a>, <a href=http://gorm.io/docs/migration.html>GORM migrations</a> and, etc. We choose <a href=https://github.com/pressly/goose target=_blank><code>pressly/goose</code></a> due to its simplicity, lesser resource usage and customizability. But, instead of using its prebuild binaries, we&rsquo;ll build a custom binary with static drivers, settings and more simplified commands.</li><li>⭐ We&rsquo;ll store all <code>sql</code> database migration files in the <code>migrations</code> folder in the project root.</li></ul></blockquote><h2 id=development-database>Development Database</h2><p>In this project, we use <a href=https://en.wikipedia.org/wiki/MariaDB>MariaDB</a> as our database. But neither MariaDB nor MySQL provide official Alpine Docker images. So in here, we use <a href=https://hub.docker.com/r/yobasystems/alpine-mariadb/ target=_blank>yobasystems/alpine-mariadb</a> MariaDB Alpine image to setup our development database.</p><p>Let&rsquo;s update the <code>docker-compose.yml</code> file,</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-dockerfile data-lang=dockerfile><span class=line><span class=cl>version: <span class=s1>&#39;3&#39;</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>services:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>  app:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    build:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      context: .<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      dockerfile: ./docker/app/Dockerfile<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    ports:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      - <span class=s2>&#34;8080:8080&#34;</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    depends_on:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      - db<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>  db:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    image: yobasystems/alpine-mariadb<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    environment:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      MYSQL_ROOT_PASSWORD: myapp_root_pass<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      MYSQL_DATABASE: myapp_db<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      MYSQL_USER: myapp_user<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      MYSQL_PASSWORD: myapp_pass<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    ports:<span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>      - <span class=s2>&#34;3306:3306&#34;</span><span class=err>
+</span></span></span><span class=line><span class=cl><span class=err></span>    restart: always<span class=err>
+</span></span></span></code></pre></div><p>Run <code>docker-compose down</code> and <code>docker-compose up</code> to rerun the application with the database. Or, you can run <code>docker-compose up db</code> to run only the database.</p><p>We can use <code>docker-compose ps</code> commands to see more info about the running containers.</p><pre tabindex=0><code>NAME                COMMAND             SERVICE             STATUS              PORTS
+myapp-app-1         &#34;/myapp/bin/app&#34;    app                 running             0.0.0.0:8080-&gt;8080/tcp
+myapp-db-1          &#34;/scripts/run.sh&#34;   db                  running             0.0.0.0:3306-&gt;3306/tcp
+</code></pre><p>You can use any MariaDB client like <a href=https://dbeaver.io/>DBeaver</a>, <a href=https://www.mysql.com/products/workbench/ target=_blank>MySQL Workbench</a> to connect to the database. But still it&rsquo;s just an empty database, because we haven&rsquo;t add any database migrations so far.</p><h2 id=migrate-app><code>migrate</code> app</h2><h3 id=1-download-and-install-the-packages-and-dependencies>1. Download and install the packages and dependencies</h3><p>Let&rsquo;s run the following commands to download and install <code>pressly/goose</code> and the dependency <code>go-sql-driver/mysql</code> packages.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=k>go</span> <span class=nx>get</span> <span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=nx>pressly</span><span class=o>/</span><span class=nx>goose</span><span class=o>/</span><span class=nx>v3</span>
+</span></span><span class=line><span class=cl><span class=k>go</span> <span class=nx>get</span> <span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=k>go</span><span class=o>-</span><span class=nx>sql</span><span class=o>-</span><span class=nx>driver</span><span class=o>/</span><span class=nx>mysql</span>
+</span></span></code></pre></div><p>The <code>go get</code> command updates the <code>go.mod</code> and <code>go.sum</code> files to store the direct and indirect dependencies of our application. You should see above packages as indirect dependencies on the <code>go.mod</code> file because still we haven&rsquo;t used them in our code.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=nx>module</span> <span class=nx>myapp</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>go</span> <span class=mf>1.19</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nf>require</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=k>go</span><span class=o>-</span><span class=nx>sql</span><span class=o>-</span><span class=nx>driver</span><span class=o>/</span><span class=nx>mysql</span> <span class=nx>v1</span><span class=mf>.6.0</span> <span class=c1>// indirect
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=nx>pressly</span><span class=o>/</span><span class=nx>goose</span><span class=o>/</span><span class=nx>v3</span> <span class=nx>v3</span><span class=mf>.7.0</span> <span class=c1>// indirect 
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>)</span>
+</span></span></code></pre></div><p>This is the first time we install a third party package via the <code>go get</code> command. You should see newly created <code>go.sum</code> file with the cryptographic hashes of the above package versions.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=k>go</span><span class=o>-</span><span class=nx>sql</span><span class=o>-</span><span class=nx>driver</span><span class=o>/</span><span class=nx>mysql</span> <span class=nx>v1</span><span class=mf>.6.0</span> <span class=nx>h1</span><span class=p>:</span><span class=nx>BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE</span><span class=p>=</span>
+</span></span><span class=line><span class=cl><span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=k>go</span><span class=o>-</span><span class=nx>sql</span><span class=o>-</span><span class=nx>driver</span><span class=o>/</span><span class=nx>mysql</span> <span class=nx>v1</span><span class=mf>.6.0</span><span class=o>/</span><span class=k>go</span><span class=p>.</span><span class=nx>mod</span> <span class=nx>h1</span><span class=p>:</span><span class=nx>DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg</span><span class=p>=</span>
+</span></span><span class=line><span class=cl><span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=nx>pressly</span><span class=o>/</span><span class=nx>goose</span><span class=o>/</span><span class=nx>v3</span> <span class=nx>v3</span><span class=mf>.7.0</span> <span class=nx>h1</span><span class=p>:</span><span class=nx>jblaZul15uCIEKHRu5KUdA</span><span class=o>+</span><span class=mi>5</span><span class=nx>wDA7E60JC0TOthdrtf8</span><span class=p>=</span>
+</span></span><span class=line><span class=cl><span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=nx>pressly</span><span class=o>/</span><span class=nx>goose</span><span class=o>/</span><span class=nx>v3</span> <span class=nx>v3</span><span class=mf>.7.0</span><span class=o>/</span><span class=k>go</span><span class=p>.</span><span class=nx>mod</span> <span class=nx>h1</span><span class=p>:</span><span class=nx>N5gqPdIzdxf3BiPWdmoPreIwHStkxsvKWE5xjUvfYNk</span><span class=p>=</span>
+</span></span></code></pre></div><h3 id=2-the-migrations-folder>2. The <code>migrations</code> folder</h3><p>As mentioned earlier, we store all <code>sql</code> database migration files in the <code>migrations</code> folder in the project root. So, let&rsquo;s create the <code>migrations</code> in project root.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>mkdir migrations
+</span></span></code></pre></div><h3 id=3-cmdmigratemaingo>3. <code>cmd/migrate/main.go</code></h3><p>The <a href=https://github.com/pressly/goose/tree/master/examples/go-migrations target=_blank><code>examples</code></a> folder in the Goose repository shows how to create a custom Goose binary. But we change the code a bit to tweak the CLI to make the database drivers, connection settings and <code>migrations</code> folder fixed and make the commands more user-friendly.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>main</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;flag&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;fmt&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;log&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;os&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;github.com/go-sql-driver/mysql&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=s>&#34;github.com/pressly/goose/v3&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>const</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>dialect</span>  <span class=p>=</span> <span class=s>&#34;mysql&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>host</span>     <span class=p>=</span> <span class=s>&#34;localhost&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>port</span>     <span class=p>=</span> <span class=mi>3306</span>
+</span></span><span class=line><span class=cl>	<span class=nx>user</span>     <span class=p>=</span> <span class=s>&#34;myapp_user&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>password</span> <span class=p>=</span> <span class=s>&#34;myapp_pass&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>database</span> <span class=p>=</span> <span class=s>&#34;myapp_db&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span> <span class=p>=</span> <span class=nx>flag</span><span class=p>.</span><span class=nf>NewFlagSet</span><span class=p>(</span><span class=s>&#34;migrate&#34;</span><span class=p>,</span> <span class=nx>flag</span><span class=p>.</span><span class=nx>ExitOnError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>dir</span>   <span class=p>=</span> <span class=nx>flags</span><span class=p>.</span><span class=nf>String</span><span class=p>(</span><span class=s>&#34;dir&#34;</span><span class=p>,</span> <span class=s>&#34;migrations&#34;</span><span class=p>,</span> <span class=s>&#34;directory with migration files&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nx>Usage</span> <span class=p>=</span> <span class=nx>usage</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nf>Parse</span><span class=p>(</span><span class=nx>os</span><span class=p>.</span><span class=nx>Args</span><span class=p>[</span><span class=mi>1</span><span class=p>:])</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>args</span> <span class=o>:=</span> <span class=nx>flags</span><span class=p>.</span><span class=nf>Args</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nb>len</span><span class=p>(</span><span class=nx>args</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span> <span class=o>||</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>==</span> <span class=s>&#34;-h&#34;</span> <span class=o>||</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>==</span> <span class=s>&#34;--help&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>flags</span><span class=p>.</span><span class=nf>Usage</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>command</span> <span class=o>:=</span> <span class=nx>args</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>cfg</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>mysql</span><span class=p>.</span><span class=nx>Config</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Net</span><span class=p>:</span>                  <span class=s>&#34;tcp&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Addr</span><span class=p>:</span>                 <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%v:%v&#34;</span><span class=p>,</span> <span class=nx>host</span><span class=p>,</span> <span class=nx>port</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>		<span class=nx>DBName</span><span class=p>:</span>               <span class=nx>database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>User</span><span class=p>:</span>                 <span class=nx>user</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Passwd</span><span class=p>:</span>               <span class=nx>password</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>AllowNativePasswords</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>ParseTime</span><span class=p>:</span>            <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>db</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>OpenDBWithDriver</span><span class=p>(</span><span class=nx>dialect</span><span class=p>,</span> <span class=nx>cfg</span><span class=p>.</span><span class=nf>FormatDSN</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>defer</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>db</span><span class=p>.</span><span class=nf>Close</span><span class=p>();</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>goose</span><span class=p>.</span><span class=nf>Run</span><span class=p>(</span><span class=nx>command</span><span class=p>,</span> <span class=nx>db</span><span class=p>,</span> <span class=o>*</span><span class=nx>dir</span><span class=p>,</span> <span class=nx>args</span><span class=p>[</span><span class=mi>1</span><span class=p>:]</span><span class=o>...</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatalf</span><span class=p>(</span><span class=s>&#34;migrate %v: %v&#34;</span><span class=p>,</span> <span class=nx>command</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>usage</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>usagePrefix</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flags</span><span class=p>.</span><span class=nf>PrintDefaults</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>usageCommands</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>usagePrefix</span> <span class=p>=</span> <span class=s>`Usage: migrate COMMAND
+</span></span></span><span class=line><span class=cl><span class=s>Examples:
+</span></span></span><span class=line><span class=cl><span class=s>    migrate status
+</span></span></span><span class=line><span class=cl><span class=s>`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>usageCommands</span> <span class=p>=</span> <span class=s>`
+</span></span></span><span class=line><span class=cl><span class=s>Commands:
+</span></span></span><span class=line><span class=cl><span class=s>    up                   Migrate the DB to the most recent version available
+</span></span></span><span class=line><span class=cl><span class=s>    up-by-one            Migrate the DB up by 1
+</span></span></span><span class=line><span class=cl><span class=s>    up-to VERSION        Migrate the DB to a specific VERSION
+</span></span></span><span class=line><span class=cl><span class=s>    down                 Roll back the version by 1
+</span></span></span><span class=line><span class=cl><span class=s>    down-to VERSION      Roll back to a specific VERSION
+</span></span></span><span class=line><span class=cl><span class=s>    redo                 Re-run the latest migration
+</span></span></span><span class=line><span class=cl><span class=s>    reset                Roll back all migrations
+</span></span></span><span class=line><span class=cl><span class=s>    status               Dump the migration status for the current DB
+</span></span></span><span class=line><span class=cl><span class=s>    version              Print the current version of the database
+</span></span></span><span class=line><span class=cl><span class=s>    create NAME [sql|go] Creates new migration file with the current timestamp
+</span></span></span><span class=line><span class=cl><span class=s>    fix                  Apply sequential ordering to migrations`</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span></code></pre></div><p>We can use <code>go run ./cmd/migrate -h</code> to test it locally. You should see the list of commands it supports.</p><pre tabindex=0><code>Usage: migrate COMMAND
+Examples:
+    migrate status
+
+  -dir string
+        directory with migration files (default &#34;migrations&#34;)
+
+Commands:
+    up                   Migrate the DB to the most recent version available
+    up-by-one            Migrate the DB up by 1
+    up-to VERSION        Migrate the DB to a specific VERSION
+    down                 Roll back the version by 1
+    down-to VERSION      Roll back to a specific VERSION
+    redo                 Re-run the latest migration
+    reset                Roll back all migrations
+    status               Dump the migration status for the current DB
+    version              Print the current version of the database
+    create NAME [sql|go] Creates new migration file with the current timestamp
+    fix                  Apply sequential ordering to migrations
+</code></pre></div><footer id=article-footer><time id=article-last-updated datetime=2022-12-26><i class="icon icon-calendar"></i>&nbsp;Last updated: 2022-12-26</time>
+<a id=article-prev-link href=/docs/adding-validator-v9/><i class="icon icon-prev icon-colored"></i> Prev</a></footer></article><aside id=toc><span class=btn-close><i class="icon icon-close"></i></span><div class=sticky><strong>On this page</strong><nav id=TableOfContents><ul><li><a href=#development-database>Development Database</a></li><li><a href=#migrate-app><code>migrate</code> app</a><ul><li><a href=#1-download-and-install-the-packages-and-dependencies>1. Download and install the packages and dependencies</a></li><li><a href=#2-the-migrations-folder>2. The <code>migrations</code> folder</a></li><li><a href=#3-cmdmigratemaingo>3. <code>cmd/migrate/main.go</code></a></li></ul></li></ul></nav></div></aside></main></div><footer id=site-footer><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank aria-label="github url"><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank aria-label="github sponsor url"><i class="icon icon-github icon-colored"></i> Sponsor</a>
+<a href=https://www.buymeacoffee.com/dumindu class=btn-buymeacoffee target=_blank aria-label="buy me a coffee url"></a></div><div id=site-footer-love>Made with <i class="icon icon-love icon-colored"></i> &nbsp;from&nbsp;<a href=https://docura.github.io/ target=_blank>Docura</a></div></footer><script type=text/javascript src=/js/base.min.js></script>
+<script src=/js/component/docsearch.min.js></script>
+<script type=application/javascript>docsearch({container:"#site-header-search",appId:"5ND7WIN6JB",indexName:"learning-cloud-native-go",apiKey:"66b4409582624e8c99c5f15a4c13cd87"})</script></body></html>
