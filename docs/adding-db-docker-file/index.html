@@ -5,7 +5,10 @@
 <i class="icon icon-translate"></i>
 <i class="icon icon-select"></i></button><ul role=menu class=dropdown-menu><li role=menuitem><a href=#>English</a></li></ul></div></div><div id=site-header-menu><nav><ul><li><a href=/><i class='icon icon-home'></i>Home</a></li><li><a href=/docs/><i class='icon icon-book'></i>Documentation</a></li></ul></nav></div><div id=site-header-search></div></header><div id=site-main-content-wrapper><aside id=sidebar><span class=btn-close><i class="icon icon-close"></i></span><strong class=sidebar-section>Documentation</strong>
 <a class=sidebar-link href=/docs/overview/>Overview</a>
-<strong class=sidebar-section>Building an API application</strong>
+<strong class=sidebar-section>Building an API application (Draft)</strong>
+<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application-in-go/>Building a Dockerized RESTful API application in Go</a>
+<a class=sidebar-link href=/docs/hello-world-server/>Hello World server</a>
+<strong class=sidebar-section>Building an API application (V1)</strong>
 <a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application/>Building a Dockerized RESTful API application</a>
 <a class=sidebar-link href=/docs/creating-a-new-go-project/>Creating a new Go project</a>
 <a class=sidebar-link href=/docs/adding-initial-http-server/>Adding initial HTTP server</a>
@@ -18,10 +21,7 @@
 <a class=sidebar-link href=/docs/adding-gorm/>Adding GORM</a>
 <a class=sidebar-link href=/docs/adding-initial-books-api-routes/>Adding initial books API routes</a>
 <a class=sidebar-link href=/docs/implementing-restful-handlers/>Implementing RESTful handlers</a>
-<a class=sidebar-link href=/docs/adding-validator-v9/>Adding Validator v9</a>
-<strong class=sidebar-section>Building an API application (New/ Draft)</strong>
-<a class=sidebar-link href=/docs/building-a-dockerized-restful-api-application-in-go/>Building a Dockerized RESTful API application in Go</a>
-<a class=sidebar-link href=/docs/hello-world-server/>Hello World server</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
+<a class=sidebar-link href=/docs/adding-validator-v9/>Adding Validator v9</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
 <button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Adding DB docker file</h1></header><div id=article-content><ul><li>As I informed earlier, we use the <code>docker</code> folder in the project root to store all Docker related files. So, Let’s save this under <code>docker/mariadb/Dockerfile</code>.</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-dockerfile data-lang=dockerfile><span class=line><span class=cl><span class=k>FROM</span><span class=s> yobasystems/alpine-mariadb:latest</span><span class=err>
 </span></span></span><span class=line><span class=cl><span class=err>
 </span></span></span><span class=line><span class=cl><span class=err></span><span class=k>RUN</span> apk update <span class=o>&amp;&amp;</span> apk add --no-cache bash<span class=err>
@@ -50,7 +50,7 @@
 </span></span><span class=line><span class=cl>--------------------------------------------------------------
 </span></span><span class=line><span class=cl>myapp_app_1   /myapp/app        Up      0.0.0.0:8080-&gt;8080/tcp
 </span></span><span class=line><span class=cl>myapp_db_1    /scripts/run.sh   Up      0.0.0.0:3306-&gt;3306/tcp
-</span></span></code></pre></div><blockquote><p>💡 Also you can use any <code>mariadb</code> client to connect to the (empty) database.</p></blockquote><p><img src=/docs/a7.check_db_connection.png alt="Check database connection"></p></div><footer id=article-footer><time id=article-last-updated datetime=2022-12-26><i class="icon icon-calendar"></i>&nbsp;Last updated: 2022-12-26</time>
+</span></span></code></pre></div><blockquote><p>💡 Also you can use any <code>mariadb</code> client to connect to the (empty) database.</p></blockquote><p><img src=/docs/v1.a7.check_db_connection.png alt="Check database connection"></p></div><footer id=article-footer><time id=article-last-updated datetime=2022-12-26><i class="icon icon-calendar"></i>&nbsp;Last updated: 2022-12-26</time>
 <a id=article-prev-link href=/docs/adding-zerolog-logger/><i class="icon icon-prev icon-colored"></i> Prev</a>
 <a id=article-next-link href=/docs/adding-initial-database-migrations/>Next <i class="icon icon-next icon-colored"></i></a></footer></article><aside id=toc><span class=btn-close><i class="icon icon-close"></i></span><div class=sticky><strong>On this page</strong><nav id=TableOfContents></nav></div></aside></main></div><footer id=site-footer><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank aria-label="github url"><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank aria-label="github sponsor url"><i class="icon icon-github icon-colored"></i> Sponsor</a>
 <a href=https://www.buymeacoffee.com/dumindu class=btn-buymeacoffee target=_blank aria-label="buy me a coffee url"></a></div><div id=site-footer-love>Made with <i class="icon icon-love icon-colored"></i> &nbsp;from&nbsp;<a href=https://docura.github.io/ target=_blank>Docura</a></div></footer><script type=text/javascript src=/js/base.min.js></script>
