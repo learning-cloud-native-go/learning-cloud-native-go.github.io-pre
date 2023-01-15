@@ -74,7 +74,7 @@
 </span></span><span class=line><span class=cl>	<span class=nx>Port</span>     <span class=kt>int</span>    <span class=s>`env:&#34;DB_PORT,required&#34;`</span>
 </span></span><span class=line><span class=cl>	<span class=nx>Username</span> <span class=kt>string</span> <span class=s>`env:&#34;DB_USER,required&#34;`</span>
 </span></span><span class=line><span class=cl>	<span class=nx>Password</span> <span class=kt>string</span> <span class=s>`env:&#34;DB_PASS,required&#34;`</span>
-</span></span><span class=line><span class=cl>	<span class=nx>DbName</span>   <span class=kt>string</span> <span class=s>`env:&#34;DB_NAME,required&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>DBName</span>   <span class=kt>string</span> <span class=s>`env:&#34;DB_NAME,required&#34;`</span>
 </span></span><span class=line><span class=cl>	<span class=nx>Debug</span>    <span class=kt>bool</span>   <span class=s>`env:&#34;DB_DEBUG,required&#34;`</span>
 </span></span><span class=line><span class=cl><span class=p>}</span>
 </span></span><span class=line><span class=cl>
@@ -162,7 +162,7 @@
 </span></span><span class=line><span class=cl>	<span class=nx>cfg</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>mysql</span><span class=p>.</span><span class=nx>Config</span><span class=p>{</span>
 </span></span><span class=line><span class=cl>		<span class=nx>Net</span><span class=p>:</span>                  <span class=s>&#34;tcp&#34;</span><span class=p>,</span>
 </span></span><span class=line><span class=cl>		<span class=nx>Addr</span><span class=p>:</span>                 <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;%v:%v&#34;</span><span class=p>,</span> <span class=nx>c</span><span class=p>.</span><span class=nx>Host</span><span class=p>,</span> <span class=nx>c</span><span class=p>.</span><span class=nx>Port</span><span class=p>),</span>
-</span></span><span class=line><span class=cl>		<span class=nx>DBName</span><span class=p>:</span>               <span class=nx>c</span><span class=p>.</span><span class=nx>DbName</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>DBName</span><span class=p>:</span>               <span class=nx>c</span><span class=p>.</span><span class=nx>DBName</span><span class=p>,</span>
 </span></span><span class=line><span class=cl>		<span class=nx>User</span><span class=p>:</span>                 <span class=nx>c</span><span class=p>.</span><span class=nx>Username</span><span class=p>,</span>
 </span></span><span class=line><span class=cl>		<span class=nx>Passwd</span><span class=p>:</span>               <span class=nx>c</span><span class=p>.</span><span class=nx>Password</span><span class=p>,</span>
 </span></span><span class=line><span class=cl>		<span class=nx>AllowNativePasswords</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
