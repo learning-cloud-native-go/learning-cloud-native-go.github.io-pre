@@ -24,27 +24,18 @@
 <a class=sidebar-link href=/docs/adding-initial-books-api-routes/>Adding initial books API routes</a>
 <a class=sidebar-link href=/docs/implementing-restful-handlers/>Implementing RESTful handlers</a>
 <a class=sidebar-link href=/docs/adding-validator-v9/>Adding Validator v9</a></aside><main><article id=article><nav id=article-nav><button id=article-nav-menu-btn><i class="icon icon-menu"></i> On this section</button>
-<button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Router, routes and OpenAPI specification</h1></header><div id=article-content><blockquote><p><strong>👨‍🏫 Before we start&mldr;</strong></p><ul><li>First, we will create a predictable, uniform interface for developing APIs based on the &ldquo;Resource oriented
-architecture&rdquo;</li><li>There are a few popular router packages in the Go ecosystem, like <a href=https://github.com/gorilla/mux target=_blank><code>gorilla/mux</code></a>
-, <a href=https://github.com/go-chi/chi><code>go-chi/chi</code></a>, <a href=https://github.com/buaazp/fasthttprouter target=_blank><code>buaazp/fasthttprouter</code></a>
-. In this project, we&rsquo;ll use <a href=https://github.com/go-chi/chi target=_blank><code>go-chi/chi</code></a> because of it is lightweight and 100%
-compatible with <code>net/http</code>.</li><li>There are some limitations in OpenAPI specification generators in the Go ecosystem. The packages
-like <a href=https://github.com/swaggest/rest target=_blank>swaggest/rest</a>
-, <a href=https://github.com/deepmap/oapi-codegen target=_blank>deepmap/oapi-codegen</a> support OpenAPI 3 but those are custom boilerplate
-generators with/from OpenAPI 3 specifications. <a href=https://github.com/swaggo/swag target=_blank>swaggo/swag</a> converts Go annotations
-to OpenAPI specifications but still support only OpenAPI 2/ Swagger 2.0 specifications. In this project, we&rsquo;ll go
-with <a href=https://github.com/swaggo/swag target=_blank>swaggo/swag</a>.</li></ul></blockquote><h2 id=resource-oriented-design>Resource oriented design</h2><p>Resource oriented design helps to create a predictable, uniform interface for designing and developing APIs by grouping
-individually named resources (nouns) and their relations with a small number of standard methods (verbs).</p><p>In this project, we will use the following resources and method names to implement a simple RESTful bookshelf API in Go.</p><table><thead><tr><th>Functionality</th><th>Resource</th><th>Method name</th><th>HTTP Method</th><th>Route</th></tr></thead><tbody><tr><td>API Health</td><td>health</td><td>Read</td><td>GET</td><td>/livez</td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td>List Books</td><td>book</td><td>List</td><td>GET</td><td>/v1/books</td></tr><tr><td>Create Book</td><td>book</td><td>Create</td><td>POST</td><td>/v1/books</td></tr><tr><td>Read Book</td><td>book</td><td>Read</td><td>GET</td><td>/v1/books/{id}</td></tr><tr><td>Update Book</td><td>book</td><td>Update</td><td>PUT</td><td>/v1/books/{id}</td></tr><tr><td>Delete Book</td><td>book</td><td>Delete</td><td>DELETE</td><td>/v1/books/{id}</td></tr></tbody></table><blockquote><p><a href=https://en.wikipedia.org/wiki/Resource-oriented_architecture target=_blank>🔍</a> Resource-oriented architecture (ROA) is a style of
-software architecture and programming paradigm for supportively designing and developing software in the form of
-inter-networking of resources with &ldquo;RESTful&rdquo; interfaces, first described by Leonard Richardson and Sam Ruby in their
-book &ldquo;RESTful Web Services&rdquo; in 2007.</p><p>⭐️ Some web frameworks and ecosystems use <code>List, Create, Get, Update, Delete</code> method names. But, in this project,
-we&rsquo;ll align with <code>List, Count, Create, Read, Update, Delete</code> method names (<code>Count</code> is to get the total/filtered items
-count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding router and routes</h2><h3 id=1-adding-chi-router>1. Adding Chi router</h3><p><code>go get github.com/go-chi/chi/v5</code></p><h3 id=2-add-apiresourcehealthhandlergo>2. Add <code>api/resource/health/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>health</span>
+<button id=article-nav-toc-btn><i class="icon icon-toc"></i> On this page</button></nav><header id=article-header><h1>Router, routes and OpenAPI specification</h1></header><div id=article-content><blockquote><p><strong>👨‍🏫 Before we start&mldr;</strong></p><ul><li>Resource-oriented design helps to create a predictable, uniform interface for designing and developing APIs. We&rsquo;ll start by implementing a common interface and designing our APIs based on it.</li><li><a href=https://github.com/gorilla/mux><code>gorilla/mux</code></a> and <a href=https://github.com/go-chi/chi><code>go-chi/chi</code></a> are the popular router packages in the Go ecosystem. We&rsquo;ll go with <a href=https://github.com/go-chi/chi target=_blank><code>go-chi/chi</code></a> because of its lightweightness and 100% compatibility with <code>net/http</code>.</li><li>We&rsquo;ll use <a href=https://github.com/swaggo/swag>swaggo/swag</a> to generate the OpenAPI specification from the annotations in each handler, even though it still supports only OpenAPI 2/ Swagger 2.0 specifications. Packages such as <a href=https://github.com/swaggest/rest>swaggest/rest</a>, <a href=https://github.com/deepmap/oapi-codegen target=_blank>deepmap/oapi-codegen</a> support OpenAPI 3, but these are custom boilerplate generators with/ from OpenAPI 3 specifications.</li></ul></blockquote><h2 id=resource-oriented-design>Resource oriented design</h2><blockquote><p><a href=https://en.wikipedia.org/wiki/Resource-oriented_architecture target=_blank>🔍</a> Resource oriented architecture is a style of software architecture and programming paradigm for supportively designing and developing software in the form of inter-networking of resources with &ldquo;RESTful&rdquo; interfaces, first described by Leonard Richardson and Sam Ruby in their book &ldquo;RESTful Web Services&rdquo; in 2007.</p></blockquote><p>Resource oriented design is based on individually named resources (nouns) and their relations with a small number of standard methods (verbs). In this project, we implement a simple RESTful bookshelf API in Go. So, let&rsquo;s take it as an example.</p><table><thead><tr><th>Functionality</th><th>Resource</th><th>Method name</th><th>HTTP Method</th><th>Route</th></tr></thead><tbody><tr><td>API Health</td><td>health</td><td>Read</td><td>GET</td><td>/livez</td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td>List Books</td><td>book</td><td>List</td><td>GET</td><td>/v1/books</td></tr><tr><td>Create Book</td><td>book</td><td>Create</td><td>POST</td><td>/v1/books</td></tr><tr><td>Read Book</td><td>book</td><td>Read</td><td>GET</td><td>/v1/books/{id}</td></tr><tr><td>Update Book</td><td>book</td><td>Update</td><td>PUT</td><td>/v1/books/{id}</td></tr><tr><td>Delete Book</td><td>book</td><td>Delete</td><td>DELETE</td><td>/v1/books/{id}</td></tr></tbody></table><p>As you can see, it creates a predictable, uniform interface for designing and developing the APIs. Our main resource is <code>book</code> and to implement <code>CRUD</code>, we use the <code>List</code>, <code>Create</code>, <code>Read</code>, <code>Update</code>, and <code>Delete</code> method names. Aside from that, to check the API&rsquo;s health, we use the resource <code>health</code> with the <code>Read</code> method.</p><p>Also, we&rsquo;ll save each resource handler under the newly created <code>api/resource</code> folder.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>api
+</span></span><span class=line><span class=cl> └── resource
+</span></span><span class=line><span class=cl>    ├── health
+</span></span><span class=line><span class=cl>    │  └── handler.go
+</span></span><span class=line><span class=cl>    └── book
+</span></span><span class=line><span class=cl>       └── handler.go
+</span></span></code></pre></div><blockquote><p>⭐️ Some web frameworks and ecosystems use <code>List</code>, <code>Create</code>, <code>Get</code>, <code>Update</code>, and <code>Delete</code> method names to implement <code>CRUD</code>. Here, we replace <code>Get</code> with <code>Read</code>, especially to avoid confusions with the <code>GET</code> HTTP method, etc. Also, if you want to support pagination and need to get the total/ filtered items count, you can align with the <code>List</code>, <code>Count</code>, <code>Create</code>, <code>Read</code>, <code>Update</code>, and <code>Delete</code> method names.</p></blockquote><h2 id=adding-router-and-routes>Adding router and routes</h2><p>Let&rsquo;s start implementing the APIs. First, we&rsquo;ll add initial handler functions inside the <code>api/resource</code> folder, followed by the router implementation in the <code>api/router</code> folder. Then, we&rsquo;ll update the <code>cmd/api/main.go</code> file to remove the initial &ldquo;Hello, world!&rdquo; handler and add the newly created router to our API.</p><h3 id=1-add-apiresourcehealthhandlergo>1. Add <code>api/resource/health/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>health</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kn>import</span> <span class=s>&#34;net/http&#34;</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>Read</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
-</span></span></code></pre></div><h3 id=3-add-apiresourcebookhandlergo>3. Add <code>api/resource/book/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>book</span>
+</span></span></code></pre></div><h3 id=2-add-apiresourcebookhandlergo>2. Add <code>api/resource/book/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>book</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kn>import</span> <span class=s>&#34;net/http&#34;</span>
 </span></span><span class=line><span class=cl>
@@ -59,6 +50,7 @@ count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding
 </span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>API</span><span class=p>)</span> <span class=nf>Update</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>API</span><span class=p>)</span> <span class=nf>Delete</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
+</span></span></code></pre></div><blockquote><p>💡️ In the future, we&rsquo;ll add the API&rsquo;s dependencies such as the DB connection, logger, and validator to the <code>API struct</code>.</p></blockquote><h3 id=3-add-chi-router>3. Add Chi router</h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=k>go</span> <span class=nx>get</span> <span class=nx>github</span><span class=p>.</span><span class=nx>com</span><span class=o>/</span><span class=k>go</span><span class=o>-</span><span class=nx>chi</span><span class=o>/</span><span class=nx>chi</span><span class=o>/</span><span class=nx>v5</span>
 </span></span></code></pre></div><h3 id=4-add-apirouterroutergo>4. Add <code>api/router/router.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>router</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
@@ -111,22 +103,26 @@ count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding
 </span></span><span class=line><span class=cl>		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=s>&#34;Server startup failed&#34;</span><span class=p>)</span>
 </span></span><span class=line><span class=cl>	<span class=p>}</span>
 </span></span><span class=line><span class=cl><span class=p>}</span>
-</span></span></code></pre></div><h2 id=generating-openapi-specification>Generating OpenAPI specification</h2><div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;id&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;author&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;published_date&#34;</span><span class=p>:</span> <span class=s2>&#34;date&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;image_url&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;description&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span>
-</span></span><span class=line><span class=cl><span class=p>}</span>
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;title&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;author&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;published_date&#34;</span><span class=p>:</span> <span class=s2>&#34;date&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;image_url&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span><span class=p>,</span>
-</span></span><span class=line><span class=cl>	<span class=nt>&#34;description&#34;</span><span class=p>:</span> <span class=s2>&#34;string&#34;</span>
-</span></span><span class=line><span class=cl><span class=p>}</span>
-</span></span></code></pre></div><h3 id=1-install-swaggoswag>1. Install <code>swaggo/swag</code></h3><p><code>go install github.com/swaggo/swag/cmd/swag@latest</code></p><h3 id=2-add-apiresourcebookmodelgo>2. Add <code>api/resource/book/model.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>book</span>
+</span></span></code></pre></div><h3 id=6-run-go-mod-tidy>6. Run <code>go mod tidy</code></h3><p>When we add a new package and use it, we have to run <code>go mod tidy</code> to reorganize the dependencies in the <code>go.mod</code> file.</p><h2 id=generating-openapi-specification>Generating OpenAPI specification</h2><h3 id=1-identify-main-data-objects>1. Identify main data objects</h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=p>|</span> Book Response Json            <span class=p>|</span>  Book create/ update form        <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>-------------------------------<span class=p>|</span>----------------------------------<span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span> <span class=o>{</span>                             <span class=p>|</span>   <span class=o>{</span>                              <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;id&#34;</span>: <span class=s2>&#34;string&#34;</span>,             <span class=p>|</span>     <span class=s2>&#34;title&#34;</span>: <span class=s2>&#34;string&#34;</span>,           <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;title&#34;</span>: <span class=s2>&#34;string&#34;</span>,          <span class=p>|</span>     <span class=s2>&#34;author&#34;</span>: <span class=s2>&#34;string&#34;</span>,          <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;author&#34;</span>: <span class=s2>&#34;string&#34;</span>,         <span class=p>|</span>     <span class=s2>&#34;published_date&#34;</span>: <span class=s2>&#34;string&#34;</span>,  <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;published_date&#34;</span>: <span class=s2>&#34;string&#34;</span>, <span class=p>|</span>     <span class=s2>&#34;image_url&#34;</span>: <span class=s2>&#34;string&#34;</span>,       <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;image_url&#34;</span>: <span class=s2>&#34;string&#34;</span>,      <span class=p>|</span>     <span class=s2>&#34;description&#34;</span>: <span class=s2>&#34;string&#34;</span>      <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;description&#34;</span>: <span class=s2>&#34;string&#34;</span>     <span class=p>|</span>   <span class=o>}</span>                              <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span> <span class=o>}</span>                             <span class=p>|</span>                                  <span class=p>|</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=p>|</span> Error Response Json           <span class=p>|</span>  Errors Response Json            <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>-------------------------------<span class=p>|</span>----------------------------------<span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span> <span class=o>{</span>                             <span class=p>|</span>   <span class=o>{</span>                              <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>   <span class=s2>&#34;error&#34;</span>: <span class=s2>&#34;string&#34;</span>,          <span class=p>|</span>     <span class=s2>&#34;errors&#34;</span>: <span class=o>[</span>                  <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span> <span class=o>}</span>                             <span class=p>|</span>          <span class=s2>&#34;string&#34;</span>,               <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>                               <span class=p>|</span>          <span class=s2>&#34;string&#34;</span>                <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>                               <span class=p>|</span>     <span class=o>]</span>                            <span class=p>|</span>
+</span></span><span class=line><span class=cl><span class=p>|</span>                               <span class=p>|</span>   <span class=o>}</span>                              <span class=p>|</span>
+</span></span></code></pre></div><h3 id=2-add-apiresourcebookmodelgo>2. Add <code>api/resource/book/model.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>package</span> <span class=nx>book</span>
 </span></span><span class=line><span class=cl>
 </span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>DTO</span> <span class=kd>struct</span> <span class=p>{</span>
 </span></span><span class=line><span class=cl>	<span class=nx>ID</span>            <span class=kt>string</span> <span class=s>`json:&#34;id&#34;`</span>
@@ -153,100 +149,100 @@ count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding
 </span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>Errors</span> <span class=kd>struct</span> <span class=p>{</span>
 </span></span><span class=line><span class=cl>	<span class=nx>Errors</span> <span class=p>[]</span><span class=kt>string</span> <span class=s>`json:&#34;errors&#34;`</span>
 </span></span><span class=line><span class=cl><span class=p>}</span>
-</span></span></code></pre></div><h3 id=4-cmdapimaingo>4. <code>cmd/api/main.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>//	@title			MYAPP API
-</span></span></span><span class=line><span class=cl><span class=c1>//	@version		1.0
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	This is a sample RESTful API with a CRUD
+</span></span></code></pre></div><h3 id=4-install-swaggoswag>4. Install <code>swaggo/swag</code></h3><p><code>go install github.com/swaggo/swag/cmd/swag@latest</code></p><h3 id=5-update-cmdapimaingo-1>5. Update <code>cmd/api/main.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>//  @title          MYAPP API
+</span></span></span><span class=line><span class=cl><span class=c1>//  @version        1.0
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    This is a sample RESTful API with a CRUD
 </span></span></span><span class=line><span class=cl><span class=c1></span>
-</span></span><span class=line><span class=cl><span class=c1>//	@contact.name	Dumindu Madunuwan
-</span></span></span><span class=line><span class=cl><span class=c1>//	@contact.url	https://learning-cloud-native-go.github.io
+</span></span><span class=line><span class=cl><span class=c1>//  @contact.name   Dumindu Madunuwan
+</span></span></span><span class=line><span class=cl><span class=c1>//  @contact.url    https://learning-cloud-native-go.github.io
 </span></span></span><span class=line><span class=cl><span class=c1></span>
-</span></span><span class=line><span class=cl><span class=c1>//	@license.name	MIT License
-</span></span></span><span class=line><span class=cl><span class=c1>//	@license.url	https://github.com/learning-cloud-native-go/myapp/blob/master/LICENSE
+</span></span><span class=line><span class=cl><span class=c1>//  @license.name   MIT License
+</span></span></span><span class=line><span class=cl><span class=c1>//  @license.url    https://github.com/learning-cloud-native-go/myapp/blob/master/LICENSE
 </span></span></span><span class=line><span class=cl><span class=c1></span>
-</span></span><span class=line><span class=cl><span class=c1>//	@host		localhost:8080
-</span></span></span><span class=line><span class=cl><span class=c1>//	@basePath	/v1
+</span></span><span class=line><span class=cl><span class=c1>//  @host       localhost:8080
+</span></span></span><span class=line><span class=cl><span class=c1>//  @basePath   /v1
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
-</span></span></code></pre></div><h3 id=5-update-apiresourcehealthhandlergo>5. update <code>api/resource/health/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// Read godoc
+</span></span></code></pre></div><h3 id=6-update-apiresourcehealthhandlergo>6. update <code>api/resource/health/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>//  Read godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		Read health
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	Read health
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			health
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		200
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/../livez [get]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        Read health
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    Read health
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           health
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        200
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /../livez [get]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>Read</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
-</span></span></code></pre></div><h3 id=6-update-apiresourcebookhandlergo>6. update <code>api/resource/book/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// List godoc
+</span></span></code></pre></div><h3 id=7-update-apiresourcebookhandlergo>7. update <code>api/resource/book/handler.go</code></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// List godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		List books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	List books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@accept			json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@produce		json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		200	{array}		DTO
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		500	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/books [get]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        List books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    List books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @accept         json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @produce        json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        200 {array}     DTO
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        500 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /books [get]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>List</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
 </span></span><span class=line><span class=cl>
-</span></span><span class=line><span class=cl><span class=c1>// Create godoc
+</span></span><span class=line><span class=cl><span class=c1>//  Create godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		Create book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	Create book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@accept			json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@produce		json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@param			body	body	Form	true	&#34;Book form&#34;
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		201
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		422	{object}	err.Errors
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		500	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/books [post]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        Create book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    Create book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @accept         json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @produce        json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @param          body    body    Form    true    &#34;Book form&#34;
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        201
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        422 {object}    err.Errors
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        500 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /books [post]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>Create</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
 </span></span><span class=line><span class=cl>
-</span></span><span class=line><span class=cl><span class=c1>// Read godoc
+</span></span><span class=line><span class=cl><span class=c1>//  Read godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		Read book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	Read book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@accept			json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@produce		json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@param			id	path		string	true	&#34;Book ID&#34;
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		200	{object}	DTO
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		400	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		404
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		500	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/books/{id} [get]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        Read book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    Read book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @accept         json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @produce        json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @param          id	path        string  true    &#34;Book ID&#34;
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        200 {object}    DTO
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        400 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        404
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        500 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /books/{id} [get]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>Read</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
 </span></span><span class=line><span class=cl>
-</span></span><span class=line><span class=cl><span class=c1>// Update godoc
+</span></span><span class=line><span class=cl><span class=c1>//  Update godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		Update book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	Update book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@accept			json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@produce		json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@param			id		path	string	true	&#34;Book ID&#34;
-</span></span></span><span class=line><span class=cl><span class=c1>//	@param			body	body	Form	true	&#34;Book form&#34;
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		200
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		400	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		404
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		422	{object}	err.Errors
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		500	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/books/{id} [put]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        Update book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    Update book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @accept         json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @produce        json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @param          id      path    string  true    &#34;Book ID&#34;
+</span></span></span><span class=line><span class=cl><span class=c1>//  @param          body    body    Form    true    &#34;Book form&#34;
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        200
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        400 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        404
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        422 {object}    err.Errors
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        500 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /books/{id} [put]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>Update</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
 </span></span><span class=line><span class=cl>
-</span></span><span class=line><span class=cl><span class=c1>// Delete godoc
+</span></span><span class=line><span class=cl><span class=c1>//  Delete godoc
 </span></span></span><span class=line><span class=cl><span class=c1>//
-</span></span></span><span class=line><span class=cl><span class=c1>//	@summary		Delete book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@description	Delete book
-</span></span></span><span class=line><span class=cl><span class=c1>//	@tags			books
-</span></span></span><span class=line><span class=cl><span class=c1>//	@accept			json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@produce		json
-</span></span></span><span class=line><span class=cl><span class=c1>//	@param			id	path	string	true	&#34;Book ID&#34;
-</span></span></span><span class=line><span class=cl><span class=c1>//	@success		200
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		400	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		404
-</span></span></span><span class=line><span class=cl><span class=c1>//	@failure		500	{object}	err.Error
-</span></span></span><span class=line><span class=cl><span class=c1>//	@router			/books/{id} [delete]
+</span></span></span><span class=line><span class=cl><span class=c1>//  @summary        Delete book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @description    Delete book
+</span></span></span><span class=line><span class=cl><span class=c1>//  @tags           books
+</span></span></span><span class=line><span class=cl><span class=c1>//  @accept         json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @produce        json
+</span></span></span><span class=line><span class=cl><span class=c1>//  @param          id  path    string  true    &#34;Book ID&#34;
+</span></span></span><span class=line><span class=cl><span class=c1>//  @success        200
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        400 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        404
+</span></span></span><span class=line><span class=cl><span class=c1>//  @failure        500 {object}    err.Error
+</span></span></span><span class=line><span class=cl><span class=c1>//  @router         /books/{id} [delete]
 </span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=nf>Delete</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{}</span>
-</span></span></code></pre></div><h3 id=7-generate-swagger-docs>7. Generate Swagger docs</h3><ul><li>Format Swagger comments : <code>swag fmt</code></li><li>Generate Swagger docs: <code>swag init -g cmd/api/main.go -o .swagger</code></li></ul><blockquote><p>💡Update <code>.gitignore</code> to add <code>.swagger</code></p></blockquote><h2 id=middleware>middleware</h2><h2 id=-final-project-structure>📁 Final project structure</h2><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>myapp
+</span></span></code></pre></div><h3 id=8-generate-openapi-specification>8. Generate OpenAPI specification</h3><ul><li>Format Swagger comments : <code>swag fmt</code></li><li>Generate Swagger docs: <code>swag init -g cmd/api/main.go -o .swagger</code></li></ul><blockquote><p>💡Update <code>.gitignore</code> to add <code>.swagger</code></p></blockquote><h2 id=-final-project-structure>📁 Final project structure</h2><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>myapp
 </span></span><span class=line><span class=cl>├── cmd
 </span></span><span class=line><span class=cl>│  ├── api
 </span></span><span class=line><span class=cl>│  │  └── main.go
@@ -255,9 +251,7 @@ count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding
 </span></span><span class=line><span class=cl>│
 </span></span><span class=line><span class=cl>├── api
 </span></span><span class=line><span class=cl>│  ├── router
-</span></span><span class=line><span class=cl>│  │  ├── router.go
-</span></span><span class=line><span class=cl>│  │  └── middleware
-</span></span><span class=line><span class=cl>│  │     └── content_type.go
+</span></span><span class=line><span class=cl>│  │  └── router.go
 </span></span><span class=line><span class=cl>│  │
 </span></span><span class=line><span class=cl>│  └── resource
 </span></span><span class=line><span class=cl>│     ├── health
@@ -282,8 +276,8 @@ count of the collection).</p></blockquote><h2 id=adding-router-and-routes>Adding
 </span></span><span class=line><span class=cl>│
 </span></span><span class=line><span class=cl>├── docker-compose.yml
 </span></span><span class=line><span class=cl>└── Dockerfile
-</span></span></code></pre></div><h2 id=-whats-next>👨‍🏫 What&rsquo;s next…</h2></div><footer id=article-footer><time id=article-last-updated datetime=2023-01-24><i class="icon icon-calendar"></i>&nbsp;Last updated: 2023-01-24</time>
-<a id=article-prev-link href=/docs/adding-validator-v9/><i class="icon icon-prev icon-colored"></i> Prev</a></footer></article><aside id=toc><span class=btn-close><i class="icon icon-close"></i></span><div class=sticky><strong>On this page</strong><nav id=TableOfContents><ul><li><a href=#resource-oriented-design>Resource oriented design</a></li><li><a href=#adding-router-and-routes>Adding router and routes</a><ul><li><a href=#1-adding-chi-router>1. Adding Chi router</a></li><li><a href=#2-add-apiresourcehealthhandlergo>2. Add <code>api/resource/health/handler.go</code></a></li><li><a href=#3-add-apiresourcebookhandlergo>3. Add <code>api/resource/book/handler.go</code></a></li><li><a href=#4-add-apirouterroutergo>4. Add <code>api/router/router.go</code></a></li><li><a href=#5-update-cmdapimaingo>5. Update <code>cmd/api/main.go</code></a></li></ul></li><li><a href=#generating-openapi-specification>Generating OpenAPI specification</a><ul><li><a href=#1-install-swaggoswag>1. Install <code>swaggo/swag</code></a></li><li><a href=#2-add-apiresourcebookmodelgo>2. Add <code>api/resource/book/model.go</code></a></li><li><a href=#3-add-apiresourcecommonerrerrgo>3. Add <code>api/resource/common/err/err.go</code></a></li><li><a href=#4-cmdapimaingo>4. <code>cmd/api/main.go</code></a></li><li><a href=#5-update-apiresourcehealthhandlergo>5. update <code>api/resource/health/handler.go</code></a></li><li><a href=#6-update-apiresourcebookhandlergo>6. update <code>api/resource/book/handler.go</code></a></li><li><a href=#7-generate-swagger-docs>7. Generate Swagger docs</a></li></ul></li><li><a href=#middleware>middleware</a></li><li><a href=#-final-project-structure>📁 Final project structure</a></li><li><a href=#-whats-next>👨‍🏫 What&rsquo;s next…</a></li></ul></nav></div></aside></main></div><footer id=site-footer><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank aria-label="github url"><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank aria-label="github sponsor url"><i class="icon icon-github icon-colored"></i> Sponsor</a>
+</span></span></code></pre></div><h2 id=-whats-next>👨‍🏫 What&rsquo;s next…</h2></div><footer id=article-footer><time id=article-last-updated datetime=2023-01-28><i class="icon icon-calendar"></i>&nbsp;Last updated: 2023-01-28</time>
+<a id=article-prev-link href=/docs/adding-validator-v9/><i class="icon icon-prev icon-colored"></i> Prev</a></footer></article><aside id=toc><span class=btn-close><i class="icon icon-close"></i></span><div class=sticky><strong>On this page</strong><nav id=TableOfContents><ul><li><a href=#resource-oriented-design>Resource oriented design</a></li><li><a href=#adding-router-and-routes>Adding router and routes</a><ul><li><a href=#1-add-apiresourcehealthhandlergo>1. Add <code>api/resource/health/handler.go</code></a></li><li><a href=#2-add-apiresourcebookhandlergo>2. Add <code>api/resource/book/handler.go</code></a></li><li><a href=#3-add-chi-router>3. Add Chi router</a></li><li><a href=#4-add-apirouterroutergo>4. Add <code>api/router/router.go</code></a></li><li><a href=#5-update-cmdapimaingo>5. Update <code>cmd/api/main.go</code></a></li><li><a href=#6-run-go-mod-tidy>6. Run <code>go mod tidy</code></a></li></ul></li><li><a href=#generating-openapi-specification>Generating OpenAPI specification</a><ul><li><a href=#1-identify-main-data-objects>1. Identify main data objects</a></li><li><a href=#2-add-apiresourcebookmodelgo>2. Add <code>api/resource/book/model.go</code></a></li><li><a href=#3-add-apiresourcecommonerrerrgo>3. Add <code>api/resource/common/err/err.go</code></a></li><li><a href=#4-install-swaggoswag>4. Install <code>swaggo/swag</code></a></li><li><a href=#5-update-cmdapimaingo-1>5. Update <code>cmd/api/main.go</code></a></li><li><a href=#6-update-apiresourcehealthhandlergo>6. update <code>api/resource/health/handler.go</code></a></li><li><a href=#7-update-apiresourcebookhandlergo>7. update <code>api/resource/book/handler.go</code></a></li><li><a href=#8-generate-openapi-specification>8. Generate OpenAPI specification</a></li></ul></li><li><a href=#-final-project-structure>📁 Final project structure</a></li><li><a href=#-whats-next>👨‍🏫 What&rsquo;s next…</a></li></ul></nav></div></aside></main></div><footer id=site-footer><div id=site-footer-copyright><a href=https://github.com/dumindu target=_blank><i class="icon icon-copyright"></i> 2022 Dumindu Madunuwan</a></div><div id=site-footer-social><a href=https://github.com/learning-cloud-native-go target=_blank aria-label="github url"><i class="icon icon-github icon-colored"></i></a></div><div id=site-footer-fund><a href=https://github.com/sponsors/dumindu class=btn-github target=_blank aria-label="github sponsor url"><i class="icon icon-github icon-colored"></i> Sponsor</a>
 <a href=https://www.buymeacoffee.com/dumindu class=btn-buymeacoffee target=_blank aria-label="buy me a coffee url"></a></div><div id=site-footer-love>Made with <i class="icon icon-love icon-colored"></i> &nbsp;from&nbsp;<a href=https://docura.github.io/ target=_blank>Docura</a></div></footer><script type=text/javascript src=/js/base.min.js></script>
 <script src=/js/component/docsearch.min.js></script>
 <script type=application/javascript>docsearch({container:"#site-header-search",appId:"5ND7WIN6JB",indexName:"learning-cloud-native-go",apiKey:"66b4409582624e8c99c5f15a4c13cd87"})</script></body></html>
